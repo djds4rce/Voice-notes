@@ -6,6 +6,7 @@ import {
   full,
 } from "@huggingface/transformers";
 
+const WHISPER_SAMPLING_RATE = 16_000;
 const MAX_NEW_TOKENS = 64;
 
 /**
@@ -44,9 +45,90 @@ class AutomaticSpeechRecognitionPipeline {
 let processing = false;
 let currentTranscription = "";
 
+// Local Agreement variables
+let committedText = "";
+let lastTentative = "";
+let audioBuffer = new Float32Array(0);
+const BUFFER_DURATION = 10; // Keep last 10 seconds of audio
+
+/**
+ * Local Agreement Algorithm
+ * Finds the longest matching sequence of words at the start of two transcriptions
+ * and commits only the matching words to prevent jittering.
+ */
+function applyLocalAgreement(newTranscription) {
+  if (!newTranscription || newTranscription.trim() === "") {
+    return { committed: committedText, tentative: lastTentative };
+  }
+
+  // Normalize text: trim, lowercase for comparison, but keep original for display
+  const normalized = newTranscription.trim();
+  const normalizedLast = lastTentative.trim();
+
+  // Split into words for comparison
+  const newWords = normalized.split(/\s+/).filter(word => word.length > 0);
+  const lastWords = normalizedLast.split(/\s+/).filter(word => word.length > 0);
+
+  let matchLength = 0;
+  const minLength = Math.min(newWords.length, lastWords.length);
+
+  // Find longest matching sequence at the start
+  for (let i = 0; i < minLength; i++) {
+    if (newWords[i].toLowerCase() === lastWords[i].toLowerCase()) {
+      matchLength++;
+    } else {
+      break;
+    }
+  }
+
+  // Commit the matching words
+  if (matchLength > 0) {
+    const wordsToCommit = lastWords.slice(0, matchLength);
+    if (committedText === "") {
+      committedText = wordsToCommit.join(" ");
+    } else {
+      committedText += " " + wordsToCommit.join(" ");
+    }
+
+    // Remove committed words from both transcriptions
+    const remainingLast = lastWords.slice(matchLength);
+    const remainingNew = newWords.slice(matchLength);
+
+    // Update tentative with new remaining words (they might be different)
+    lastTentative = remainingNew.join(" ");
+  } else {
+    // No match, keep all of new transcription as tentative
+    lastTentative = normalized;
+  }
+
+  // Return the combined result
+  const finalText = committedText + (lastTentative ? " " + lastTentative : "");
+
+  return {
+    committed: committedText,
+    tentative: lastTentative,
+    full: finalText
+  };
+}
+
 async function generate({ audio, language }) {
   if (processing) return;
   processing = true;
+
+  // Add new audio to buffer (keep last 10 seconds)
+  // Convert new audio to Float32Array and concatenate
+  const newAudio = new Float32Array(audio);
+  const combinedLength = audioBuffer.length + newAudio.length;
+  const combinedBuffer = new Float32Array(combinedLength);
+  combinedBuffer.set(audioBuffer);
+  combinedBuffer.set(newAudio, audioBuffer.length);
+  audioBuffer = combinedBuffer;
+
+  // Keep only last 10 seconds
+  const maxBufferLength = WHISPER_SAMPLING_RATE * BUFFER_DURATION;
+  if (audioBuffer.length > maxBufferLength) {
+    audioBuffer = audioBuffer.slice(-maxBufferLength);
+  }
 
   // Tell the main thread we are starting
   self.postMessage({ status: "start" });
@@ -66,16 +148,11 @@ async function generate({ audio, language }) {
     }
   };
 
+  let latestTranscription = "";
+
   // Simple streaming callback function
   const callback_function = (output) => {
-    currentTranscription = output;
-
-    self.postMessage({
-      status: "update",
-      output: currentTranscription,
-      tps,
-      numTokens,
-    });
+    latestTranscription = output;
   };
 
   // Initialize the streamer
@@ -86,8 +163,8 @@ async function generate({ audio, language }) {
     token_callback_function,
   });
 
-  // Process the audio
-  const inputs = await processor(audio);
+  // Process the audio from the buffer
+  const inputs = await processor(audioBuffer);
 
   const outputs = await model.generate({
     ...inputs,
@@ -100,13 +177,27 @@ async function generate({ audio, language }) {
     skip_special_tokens: true,
   });
 
-  // Send the final output back to the main thread
+  console.log(decoded)
+  // Apply Local Agreement to the final transcription
+  const result = applyLocalAgreement(decoded[0]);
+
+  // Send the result with both committed and tentative parts
   self.postMessage({
-    status: "complete",
-    output: decoded[0],
+    status: "update",
+    output: result.full,
+    committed: result.committed,
+    tentative: result.tentative,
+    tps,
+    numTokens,
   });
 
   processing = false;
+}
+
+function resetLocalAgreement() {
+  committedText = "";
+  lastTentative = "";
+  audioBuffer = new Float32Array(0);
 }
 
 async function load() {
@@ -148,6 +239,10 @@ self.addEventListener("message", async (e) => {
 
     case "generate":
       generate(data);
+      break;
+
+    case "reset":
+      resetLocalAgreement();
       break;
   }
 });

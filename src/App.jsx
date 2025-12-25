@@ -23,6 +23,8 @@ function App() {
 
   // Inputs and outputs
   const [text, setText] = useState("");
+  const [committedText, setCommittedText] = useState("");
+  const [tentativeText, setTentativeText] = useState("");
   const [tps, setTps] = useState(null);
   const [language, setLanguage] = useState("en");
 
@@ -92,9 +94,11 @@ function App() {
 
         case "update":
           {
-            // Real-time streaming update
-            const { output, tps } = e.data;
+            // Real-time streaming update with Local Agreement
+            const { output, committed, tentative, tps } = e.data;
             setText(output);
+            setCommittedText(committed || "");
+            setTentativeText(tentative || "");
             setTps(tps);
           }
           break;
@@ -261,20 +265,41 @@ function App() {
               <AudioVisualizer className="w-full rounded-lg" stream={stream} />
               {status === "ready" && (
                 <>
-                  {/* Transcription Display */}
+                  {/* Transcription Display with Local Agreement */}
                   <div className="mb-2">
                     <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                      Real-time Transcription
+                      Real-time Transcription (Local Agreement)
                     </h3>
                     <div className="relative">
                       <p className="w-full h-[150px] overflow-y-auto overflow-wrap-anywhere border rounded-lg p-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-                        {text || "Listening..."}
+                        {committedText && (
+                          <span className="text-black dark:text-white font-normal">
+                            {committedText}
+                          </span>
+                        )}
+                        {tentativeText && committedText && (
+                          <span className="text-gray-600 dark:text-gray-400"> </span>
+                        )}
+                        {tentativeText && (
+                          <span className="text-gray-500 dark:text-gray-400 italic">
+                            {tentativeText}
+                          </span>
+                        )}
+                        {!committedText && !tentativeText && (
+                          <span className="text-gray-400 dark:text-gray-500">
+                            Listening...
+                          </span>
+                        )}
                       </p>
                       {tps && (
                         <span className="absolute bottom-0 right-0 px-1 text-xs text-gray-500 dark:text-gray-400">
                           {tps.toFixed(2)} tok/s
                         </span>
                       )}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 flex justify-between">
+                      <span>Black: Committed text (stable)</span>
+                      <span>Gray italic: Tentative text (may change)</span>
                     </div>
                   </div>
                 </>
@@ -295,7 +320,10 @@ function App() {
                   className="border rounded-lg px-2 absolute right-2 bg-red-500 text-white hover:bg-red-600"
                   onClick={() => {
                     setText("");
+                    setCommittedText("");
+                    setTentativeText("");
                     setTps(null);
+                    worker.current?.postMessage({ type: "reset" });
                     recorderRef.current?.stop();
                     recorderRef.current?.start();
                   }}
