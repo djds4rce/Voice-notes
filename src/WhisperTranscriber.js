@@ -1,26 +1,23 @@
-import {
-    AutoTokenizer,
-    AutoProcessor,
-    WhisperForConditionalGeneration,
-    full,
-} from "@huggingface/transformers";
+import { pipeline } from "@huggingface/transformers";
 
 /**
  * WhisperTranscriber
  * 
  * Handles loading and running the Whisper model for speech-to-text.
+ * Uses the pipeline API to get word-level timestamps for proper local agreement.
  * Singleton pattern ensures model is loaded only once.
+ * 
+ * Reference: https://huggingface.co/docs/transformers.js/api/pipelines#automaticspeechrecognitionpipeline
  */
 export class WhisperTranscriber {
-    static MODEL_ID = "onnx-community/whisper-base";
-    static MAX_NEW_TOKENS = 128;
+    // Xenova models have output_attentions enabled for word-level timestamps
+    static MODEL_ID = "Xenova/whisper-base";
 
     static instance = null;
+    static transcriber = null;
 
-    constructor(tokenizer, processor, model) {
-        this.tokenizer = tokenizer;
-        this.processor = processor;
-        this.model = model;
+    constructor(transcriber) {
+        this.transcriber = transcriber;
     }
 
     static async getInstance(progressCallback = null) {
@@ -28,15 +25,9 @@ export class WhisperTranscriber {
             return this.instance;
         }
 
-        const tokenizer = await AutoTokenizer.from_pretrained(this.MODEL_ID, {
-            progress_callback: progressCallback,
-        });
-
-        const processor = await AutoProcessor.from_pretrained(this.MODEL_ID, {
-            progress_callback: progressCallback,
-        });
-
-        const model = await WhisperForConditionalGeneration.from_pretrained(
+        // Use pipeline API for automatic speech recognition with word-level timestamps support
+        const transcriber = await pipeline(
+            "automatic-speech-recognition",
             this.MODEL_ID,
             {
                 dtype: {
@@ -48,59 +39,97 @@ export class WhisperTranscriber {
             }
         );
 
-        this.instance = new WhisperTranscriber(tokenizer, processor, model);
+        this.instance = new WhisperTranscriber(transcriber);
         return this.instance;
     }
 
     async warmup() {
-        await this.model.generate({
-            input_features: full([1, 80, 3000], 0.0),
-            max_new_tokens: 1,
+        // Warmup with a tiny audio sample
+        const dummyAudio = new Float32Array(16000); // 1 second of silence
+        await this.transcriber(dummyAudio, {
+            return_timestamps: false,
         });
     }
 
     /**
-     * Transcribe audio to text
+     * Transcribe audio to text with word-level timestamps
      * @param {Float32Array} audio - Audio samples at 16kHz
      * @param {string} language - Language code (e.g., "en")
-     * @returns {Promise<{text: string, tps: number, numTokens: number}>}
+     * @returns {Promise<{text: string, chunks: Array<{text: string, start: number, end: number}>, tps: number}>}
      */
     async transcribe(audio, language) {
         const startTime = performance.now();
 
-        const inputs = await this.processor(audio);
+        let result;
+        let hasWordTimestamps = false;
 
-        const outputs = await this.model.generate({
-            ...inputs,
-            max_new_tokens: WhisperTranscriber.MAX_NEW_TOKENS,
-            language,
-        });
-
-        // Extract sequences from output
-        let sequences = outputs.sequences || outputs;
-
-        const numTokens = sequences.dims ? sequences.dims[1] : 0;
-        const tps = (numTokens / (performance.now() - startTime)) * 1000;
-
-        // Convert to array for decoding
-        let tokenIds = sequences;
-        if (sequences.tolist) {
-            tokenIds = sequences.tolist();
-        } else if (sequences.data) {
-            tokenIds = Array.from(sequences.data);
+        try {
+            // Try to get word-level timestamps first
+            result = await this.transcriber(audio, {
+                language,
+                return_timestamps: "word",
+            });
+            hasWordTimestamps = result.chunks && result.chunks.length > 0;
+        } catch (e) {
+            console.warn("[Whisper] Word timestamps not supported, falling back to segment timestamps:", e.message);
+            // Fall back to segment-level timestamps
+            result = await this.transcriber(audio, {
+                language,
+                return_timestamps: true,
+            });
         }
 
-        const decoded = this.tokenizer.batch_decode(tokenIds, {
-            skip_special_tokens: true,
-        });
+        const endTime = performance.now();
+        const duration = (endTime - startTime) / 1000;
 
-        // Clean up transcription
-        let text = decoded[0] || "";
+        // Clean up text
+        let text = result.text || "";
         text = text
             .replace(/\[BLANK_AUDIO\]/gi, "")
             .replace(/\s+/g, " ")
             .trim();
 
-        return { text, tps, numTokens };
+        // Convert to chunks with start/end times
+        let chunks = [];
+
+        if (hasWordTimestamps && result.chunks) {
+            // Word-level timestamps: [{text: " And", timestamp: [0, 0.78]}, ...]
+            chunks = result.chunks.map(chunk => ({
+                text: chunk.text?.trim() || "",
+                start: chunk.timestamp?.[0] ?? 0,
+                end: chunk.timestamp?.[1] ?? 0,
+            })).filter(chunk => chunk.text.length > 0);
+        } else if (result.chunks) {
+            // Segment-level timestamps: split into words with estimated times
+            chunks = [];
+            for (const segment of result.chunks) {
+                const words = (segment.text || "").trim().split(/\s+/).filter(w => w.length > 0);
+                const segStart = segment.timestamp?.[0] ?? 0;
+                const segEnd = segment.timestamp?.[1] ?? 0;
+                const wordDuration = words.length > 0 ? (segEnd - segStart) / words.length : 0;
+
+                words.forEach((word, i) => {
+                    chunks.push({
+                        text: word,
+                        start: segStart + i * wordDuration,
+                        end: segStart + (i + 1) * wordDuration,
+                    });
+                });
+            }
+        } else {
+            // No timestamps at all - estimate based on text
+            const words = text.split(/\s+/).filter(w => w.length > 0);
+            const wordDuration = 0.3;
+            chunks = words.map((word, i) => ({
+                text: word,
+                start: i * wordDuration,
+                end: (i + 1) * wordDuration,
+            }));
+        }
+
+        const tps = chunks.length / duration;
+        console.log(`[Whisper] Transcribed ${chunks.length} words in ${duration.toFixed(2)}s (${hasWordTimestamps ? 'word' : 'segment'} timestamps)`);
+
+        return { text, chunks, tps };
     }
 }

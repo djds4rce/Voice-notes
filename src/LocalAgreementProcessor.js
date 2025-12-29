@@ -1,177 +1,206 @@
 /**
  * LocalAgreementProcessor
  * 
- * Handles transcription stability using the Local Agreement algorithm.
- * Detects window shifts and handles duplicate text detection.
+ * Direct port of Python whisper_streaming's HypothesisBuffer class.
+ * Uses word-level timestamps for proper duplicate detection.
+ * 
+ * Key principle: Only commit words that appear in BOTH the previous transcription
+ * AND the current transcription (Local Agreement policy).
+ * 
+ * Reference: https://github.com/ufal/whisper_streaming
+ * Paper: "Turning Whisper into Real-Time Transcription System" (2023)
  */
 export class LocalAgreementProcessor {
     constructor() {
-        this.SUFFIX_SIZE = 45;
-        this.WINDOW_SHIFT_THRESHOLD = 0.5;
-        this.MIN_OVERLAP_LENGTH = 2;
-        this.reset();
+        // Buffer of already committed words that are still in the audio window
+        this.committedInBuffer = [];
+        // Previous transcription buffer (from last iteration)
+        this.buffer = [];
+        // New transcription (current iteration)  
+        this.new = [];
+
+        // Tracking
+        this.lastCommittedTime = 0;
+        this.lastCommittedWord = null;
+
+        // All committed words across all windows
+        this.allCommitted = [];
+
+        // Configuration (from Python whisper_streaming)
+        this.MAX_NGRAM_SIZE = 5;  // Check 1-5 consecutive words for duplicates
     }
 
     reset() {
-        this.committedText = "";
-        this.lastWindowStart = 0;
-        this.committedSuffix = [];
-        this.previousWords = [];
-        this.segmentCommittedCount = 0;
+        this.committedInBuffer = [];
+        this.buffer = [];
+        this.new = [];
+        this.lastCommittedTime = 0;
+        this.lastCommittedWord = null;
+        this.allCommitted = [];
     }
 
     /**
-     * Process new transcription and return committed + tentative text
+     * Process new transcription with word-level timestamps
+     * @param {Array<{text: string, start: number, end: number}>} chunks - Word chunks with timestamps
+     * @param {number} audioWindowStart - Start time of audio window in seconds (offset)
+     * @returns {{committed: string, tentative: string}}
      */
-    process(transcription, audioWindowStart) {
-        const currentWords = tokenize(transcription);
-
-        if (currentWords.length === 0) {
-            return this._buildResult([]);
+    process(chunks, audioWindowStart) {
+        if (!chunks || chunks.length === 0) {
+            return this._buildResult();
         }
 
-        const windowShifted = audioWindowStart > this.lastWindowStart + this.WINDOW_SHIFT_THRESHOLD;
+        // Add offset to all timestamps
+        const wordsWithOffset = chunks.map(chunk => ({
+            text: chunk.text,
+            start: chunk.start + audioWindowStart,
+            end: chunk.end + audioWindowStart,
+        }));
 
-        if (windowShifted) {
-            return this._handleWindowShift(currentWords, audioWindowStart);
-        }
+        // Insert new words with duplicate detection (Python: HypothesisBuffer.insert)
+        this._insert(wordsWithOffset);
 
-        return this._handleSameWindow(currentWords, audioWindowStart);
+        // Flush: commit words that appear in both previous and current buffer (Python: HypothesisBuffer.flush)
+        this._flush();
+
+        return this._buildResult();
     }
 
-    _handleWindowShift(currentWords, audioWindowStart) {
-        console.log(`\n[LocalAgreement] Window shift: ${this.lastWindowStart.toFixed(1)}s → ${audioWindowStart.toFixed(1)}s`);
+    /**
+     * Insert new transcription, filtering duplicates via timestamp and n-gram matching
+     * Direct port of Python HypothesisBuffer.insert()
+     */
+    _insert(newWords) {
+        // Filter words that are after the last committed time (with 0.1s tolerance)
+        // Python: self.new = [(a,b,t) for a,b,t in new if a > self.last_commited_time-0.1]
+        this.new = newWords.filter(w => w.start > this.lastCommittedTime - 0.1);
 
-        // Finalize pending words
-        if (this.segmentCommittedCount > 0 && this.previousWords.length > 0) {
-            const toFinalize = this.previousWords.slice(0, this.segmentCommittedCount).join(" ");
-            if (toFinalize) {
-                this.committedText = appendText(this.committedText, toFinalize);
-                this._updateCommittedSuffix();
-                console.log(`[LocalAgreement] Finalized: "${toFinalize}"`);
+        if (this.new.length >= 1) {
+            const firstWord = this.new[0];
+
+            // If the first new word is close to the last committed time (within 1 second)
+            // Python: if abs(a - self.last_commited_time) < 1:
+            if (Math.abs(firstWord.start - this.lastCommittedTime) < 1) {
+                if (this.committedInBuffer.length > 0) {
+                    // N-gram duplicate removal
+                    // Python: for i in range(1,min(min(cn,nn),5)+1):
+                    const cn = this.committedInBuffer.length;
+                    const nn = this.new.length;
+
+                    for (let i = 1; i <= Math.min(Math.min(cn, nn), this.MAX_NGRAM_SIZE); i++) {
+                        // Get last i words from committed buffer
+                        // Python: c = " ".join([self.commited_in_buffer[-j][2] for j in range(1,i+1)][::-1])
+                        const committedTail = this.committedInBuffer
+                            .slice(-i)
+                            .map(w => w.text)
+                            .join(" ");
+
+                        // Get first i words from new
+                        // Python: tail = " ".join(self.new[j-1][2] for j in range(1,i+1))
+                        const newHead = this.new
+                            .slice(0, i)
+                            .map(w => w.text)
+                            .join(" ");
+
+                        if (committedTail.toLowerCase() === newHead.toLowerCase()) {
+                            // Remove duplicate words from the beginning of new
+                            // Python: for j in range(i): words.append(repr(self.new.pop(0)))
+                            const removed = this.new.splice(0, i);
+                            console.log(`[LocalAgreement] N-gram match (${i} words): removed "${removed.map(w => w.text).join(" ")}"`);
+                            break;
+                        }
+                    }
+                }
             }
         }
 
-        // Find and skip duplicates
-        const duplicateCount = this._findOverlapLength(currentWords);
-        const newWords = currentWords.slice(duplicateCount);
-        console.log(`[LocalAgreement] Skipped ${duplicateCount} duplicates, ${newWords.length} new words`);
-
-        // Reset for new window
-        this.previousWords = newWords;
-        this.segmentCommittedCount = 0;
-        this.lastWindowStart = audioWindowStart;
-
-        return this._buildResult(newWords);
+        console.log(`[LocalAgreement] After insert: ${this.new.length} new words, lastCommittedTime=${this.lastCommittedTime.toFixed(2)}s`);
     }
 
-    _handleSameWindow(currentWords, audioWindowStart) {
-        this.lastWindowStart = audioWindowStart;
+    /**
+     * Commit words that appear in BOTH previous buffer AND current new transcription
+     * This is the core "Local Agreement" logic.
+     * Direct port of Python HypothesisBuffer.flush()
+     */
+    _flush() {
+        const commit = [];
 
-        const matchCount = countMatchingPrefix(this.previousWords, currentWords);
-        if (matchCount > this.segmentCommittedCount) {
-            this.segmentCommittedCount = matchCount;
-        }
-        this.previousWords = currentWords;
+        // Python: while self.new:
+        while (this.new.length > 0) {
+            const newWord = this.new[0];
 
-        return this._buildResultWithSegment(currentWords);
-    }
+            // If previous buffer is empty, can't confirm yet
+            // Python: if len(self.buffer) == 0: break
+            if (this.buffer.length === 0) {
+                break;
+            }
 
-    _updateCommittedSuffix() {
-        const words = tokenize(this.committedText);
-        this.committedSuffix = words.slice(-this.SUFFIX_SIZE);
-    }
-
-    _findOverlapLength(newWords) {
-        if (this.committedSuffix.length === 0 || newWords.length === 0) {
-            return 0;
-        }
-
-        const maxOverlap = Math.min(this.committedSuffix.length, newWords.length);
-
-        for (let len = maxOverlap; len >= this.MIN_OVERLAP_LENGTH; len--) {
-            const suffix = this.committedSuffix.slice(-len);
-            const prefix = newWords.slice(0, len);
-
-            if (suffix.every((w, i) => w.toLowerCase() === prefix[i].toLowerCase())) {
-                console.log(`[LocalAgreement] Found ${len} duplicate words`);
-                return len;
+            // LOCAL AGREEMENT: Only commit if word matches between previous and current
+            // Python: if nt == self.buffer[0][2]:
+            if (newWord.text.toLowerCase() === this.buffer[0].text.toLowerCase()) {
+                commit.push(newWord);
+                this.lastCommittedWord = newWord.text;
+                this.lastCommittedTime = newWord.end;
+                this.buffer.shift();  // Python: self.buffer.pop(0)
+                this.new.shift();     // Python: self.new.pop(0)
+            } else {
+                // Words don't match - stop committing
+                break;
             }
         }
 
-        return 0;
+        // Move remaining new words to buffer for next iteration
+        // Python: self.buffer = self.new; self.new = []
+        this.buffer = this.new;
+        this.new = [];
+
+        // Add committed words to tracking
+        // Python: self.commited_in_buffer.extend(commit)
+        this.committedInBuffer.push(...commit);
+        this.allCommitted.push(...commit);
+
+        if (commit.length > 0) {
+            console.log(`[LocalAgreement] Committed ${commit.length} words: "${commit.map(w => w.text).join(" ")}" (until ${this.lastCommittedTime.toFixed(2)}s)`);
+        }
+
+        return commit;
     }
 
-    _buildResult(tentativeWords) {
+    /**
+     * Remove old committed words when audio buffer is trimmed
+     * Direct port of Python HypothesisBuffer.pop_commited()
+     */
+    popCommitted(time) {
+        while (this.committedInBuffer.length > 0 && this.committedInBuffer[0].end <= time) {
+            this.committedInBuffer.shift();
+        }
+    }
+
+    /**
+     * Get currently uncommitted (tentative) words
+     * Direct port of Python HypothesisBuffer.complete()
+     */
+    getTentative() {
+        return this.buffer;
+    }
+
+    /**
+     * Build result with committed and tentative text
+     */
+    _buildResult() {
+        const committed = this.allCommitted.map(w => w.text).join(" ");
+        const tentative = this.buffer.map(w => w.text).join(" ");
+
         return {
-            committed: this.committedText,
-            tentative: tentativeWords.join(" "),
+            committed,
+            tentative
         };
     }
 
-    _buildResultWithSegment(currentWords) {
-        const segmentCommitted = currentWords.slice(0, this.segmentCommittedCount).join(" ");
-        const fullCommitted = appendText(this.committedText, segmentCommitted);
-
-        // Get tentative words and filter duplicates before returning
-        let tentativeWords = currentWords.slice(this.segmentCommittedCount);
-
-        // Build a temporary suffix from fullCommitted to check for duplicates
-        const fullCommittedWords = tokenize(fullCommitted);
-        const tempSuffix = fullCommittedWords.slice(-this.SUFFIX_SIZE);
-
-        if (tempSuffix.length > 0 && tentativeWords.length > 0) {
-            const duplicateCount = this._findOverlapLengthWith(tempSuffix, tentativeWords);
-            if (duplicateCount > 0) {
-                console.log(`[LocalAgreement] Filtered ${duplicateCount} duplicates from tentative`);
-                tentativeWords = tentativeWords.slice(duplicateCount);
-            }
-        }
-
-        return {
-            committed: fullCommitted,
-            tentative: tentativeWords.join(" "),
-        };
+    /**
+     * Get all committed text
+     */
+    getCommittedText() {
+        return this.allCommitted.map(w => w.text).join(" ");
     }
-
-    _findOverlapLengthWith(suffix, newWords) {
-        if (suffix.length === 0 || newWords.length === 0) {
-            return 0;
-        }
-
-        const maxOverlap = Math.min(suffix.length, newWords.length);
-
-        for (let len = maxOverlap; len >= this.MIN_OVERLAP_LENGTH; len--) {
-            const suffixPart = suffix.slice(-len);
-            const prefix = newWords.slice(0, len);
-
-            if (suffixPart.every((w, i) => w.toLowerCase() === prefix[i].toLowerCase())) {
-                return len;
-            }
-        }
-
-        return 0;
-    }
-}
-
-function tokenize(text) {
-    return text.trim().split(/\s+/).filter(w => w.length > 0);
-}
-
-function appendText(existing, addition) {
-    if (!addition) return existing;
-    return existing + (existing ? " " : "") + addition;
-}
-
-function countMatchingPrefix(words1, words2) {
-    const minLen = Math.min(words1.length, words2.length);
-    let count = 0;
-    for (let i = 0; i < minLen; i++) {
-        if (words1[i].toLowerCase() === words2[i].toLowerCase()) {
-            count++;
-        } else {
-            break;
-        }
-    }
-    return count;
 }

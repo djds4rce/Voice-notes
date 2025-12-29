@@ -38,22 +38,22 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
   self.postMessage({ status: "start" });
 
   try {
-    // Get raw transcription from Whisper
-    const { text, tps, numTokens } = await transcriber.transcribe(audio, language);
+    // Get transcription with word-level timestamps
+    const { text, chunks, tps } = await transcriber.transcribe(audio, language);
 
-    // Apply Local Agreement for stability
-    const result = agreementProcessor.process(text, audioWindowStart);
+    // Apply Local Agreement for stability using word chunks with timestamps
+    const result = agreementProcessor.process(chunks, audioWindowStart);
 
-    // Send results
+    // Send results - include both committed (stable) and tentative (may change) text
     const output = result.committed + (result.tentative ? " " + result.tentative : "");
 
     self.postMessage({
       status: "update",
       output,
-      committed: result.committed + " " + result.tentative,
-      tentative: "",
+      committed: result.committed,
+      tentative: result.tentative,
       tps,
-      numTokens,
+      numTokens: chunks.length,
     });
 
     self.postMessage({
@@ -64,10 +64,11 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
   } catch (error) {
     console.error("Transcription error:", error);
 
+    const committedText = agreementProcessor.getCommittedText();
     self.postMessage({
       status: "update",
-      output: agreementProcessor.committedText,
-      committed: agreementProcessor.committedText,
+      output: committedText,
+      committed: committedText,
       tentative: "",
       tps: 0,
       numTokens: 0,
@@ -75,7 +76,7 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
 
     self.postMessage({
       status: "complete",
-      output: agreementProcessor.committedText
+      output: committedText
     });
   }
 
