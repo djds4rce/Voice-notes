@@ -6,7 +6,7 @@
  */
 export class LocalAgreementProcessor {
     constructor() {
-        this.SUFFIX_SIZE = 15;
+        this.SUFFIX_SIZE = 45;
         this.WINDOW_SHIFT_THRESHOLD = 0.5;
         this.MIN_OVERLAP_LENGTH = 2;
         this.reset();
@@ -112,12 +112,45 @@ export class LocalAgreementProcessor {
     _buildResultWithSegment(currentWords) {
         const segmentCommitted = currentWords.slice(0, this.segmentCommittedCount).join(" ");
         const fullCommitted = appendText(this.committedText, segmentCommitted);
-        const tentative = currentWords.slice(this.segmentCommittedCount).join(" ");
+
+        // Get tentative words and filter duplicates before returning
+        let tentativeWords = currentWords.slice(this.segmentCommittedCount);
+
+        // Build a temporary suffix from fullCommitted to check for duplicates
+        const fullCommittedWords = tokenize(fullCommitted);
+        const tempSuffix = fullCommittedWords.slice(-this.SUFFIX_SIZE);
+
+        if (tempSuffix.length > 0 && tentativeWords.length > 0) {
+            const duplicateCount = this._findOverlapLengthWith(tempSuffix, tentativeWords);
+            if (duplicateCount > 0) {
+                console.log(`[LocalAgreement] Filtered ${duplicateCount} duplicates from tentative`);
+                tentativeWords = tentativeWords.slice(duplicateCount);
+            }
+        }
 
         return {
             committed: fullCommitted,
-            tentative,
+            tentative: tentativeWords.join(" "),
         };
+    }
+
+    _findOverlapLengthWith(suffix, newWords) {
+        if (suffix.length === 0 || newWords.length === 0) {
+            return 0;
+        }
+
+        const maxOverlap = Math.min(suffix.length, newWords.length);
+
+        for (let len = maxOverlap; len >= this.MIN_OVERLAP_LENGTH; len--) {
+            const suffixPart = suffix.slice(-len);
+            const prefix = newWords.slice(0, len);
+
+            if (suffixPart.every((w, i) => w.toLowerCase() === prefix[i].toLowerCase())) {
+                return len;
+            }
+        }
+
+        return 0;
     }
 }
 
