@@ -30,3 +30,33 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* Smooth word fade-in animation */
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.word-fade-in {
+  animation: wordFadeIn 0.2s ease-out forwards;
+}
+
+/* Tentative text pulse animation */
+@keyframes tentativePulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.tentative-pulse {
+  animation: tentativePulse 1.5s ease-in-out infinite;
+}
