@@ -42,6 +42,7 @@ class DatabaseService {
           audio_mime_type TEXT DEFAULT 'audio/webm',
           duration_seconds REAL,
           word_timestamps TEXT,
+          tags TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -67,7 +68,7 @@ class DatabaseService {
      * @param {Array} note.wordTimestamps - Word-level timestamps
      * @returns {Promise<Object>} The created note with id
      */
-    async createNote({ transcript, audioBlob, durationSeconds, wordTimestamps }) {
+    async createNote({ transcript, audioBlob, durationSeconds, wordTimestamps, tags }) {
         // Generate title from first few words of transcript
         const title = this.generateTitle(transcript);
 
@@ -78,16 +79,19 @@ class DatabaseService {
         // Serialize word timestamps to JSON
         const timestampsJson = wordTimestamps ? JSON.stringify(wordTimestamps) : null;
 
+        // Serialize tags to JSON
+        const tagsJson = tags ? JSON.stringify(tags) : null;
+
         // Store local time for display (format: 'YYYY-MM-DD HH:mm:ss')
         const now = new Date();
         const localTimestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
         const query = `
-      INSERT INTO voice_notes (title, transcript, audio_blob, audio_mime_type, duration_seconds, word_timestamps, created_at, updated_at)
-      VALUES ($1, $2, decode($3, 'base64'), $4, $5, $6, $7, $7)
-      RETURNING id, title, transcript, duration_seconds, created_at
+      INSERT INTO voice_notes (title, transcript, audio_blob, audio_mime_type, duration_seconds, word_timestamps, tags, created_at, updated_at)
+      VALUES ($1, $2, decode($3, 'base64'), $4, $5, $6, $7, $8, $8)
+      RETURNING id, title, transcript, duration_seconds, tags, created_at
     `;
-        const params = [title, transcript, audioBase64, mimeType, durationSeconds, timestampsJson, localTimestamp];
+        const params = [title, transcript, audioBase64, mimeType, durationSeconds, timestampsJson, tagsJson, localTimestamp];
 
         const result = await this.db.query(query, params);
         console.log('[DatabaseService] Created note:', result.rows[0]);
@@ -100,11 +104,21 @@ class DatabaseService {
      */
     async getAllNotes() {
         const result = await this.db.query(`
-      SELECT id, title, transcript, duration_seconds, created_at, updated_at
+      SELECT id, title, transcript, duration_seconds, tags, created_at, updated_at
       FROM voice_notes
       ORDER BY created_at DESC
     `);
-        return result.rows;
+        // Parse tags
+        return result.rows.map(note => {
+            if (note.tags) {
+                try {
+                    note.tags = JSON.parse(note.tags);
+                } catch (e) {
+                    note.tags = [];
+                }
+            }
+            return note;
+        });
     }
 
     /**
@@ -115,7 +129,7 @@ class DatabaseService {
     async getNoteById(id) {
         const result = await this.db.query(`
       SELECT id, title, transcript, encode(audio_blob, 'base64') as audio_base64, 
-             audio_mime_type, duration_seconds, word_timestamps, created_at, updated_at
+             audio_mime_type, duration_seconds, word_timestamps, tags, created_at, updated_at
       FROM voice_notes
       WHERE id = $1
     `, [id]);
@@ -135,6 +149,15 @@ class DatabaseService {
             } catch (e) {
                 console.warn('[DatabaseService] Failed to parse word_timestamps:', e);
                 note.wordTimestamps = null;
+            }
+        }
+        // Parse tags
+        if (note.tags) {
+            try {
+                note.tags = JSON.parse(note.tags);
+            } catch (e) {
+                console.warn('[DatabaseService] Failed to parse tags:', e);
+                note.tags = [];
             }
         }
         return note;

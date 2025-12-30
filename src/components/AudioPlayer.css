@@ -39,12 +39,55 @@
     font-weight: 600;
     color: #333;
     margin: 0;
-    flex: 1;
-    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.player-header-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     padding: 0 12px;
+    min-width: 0;
+    /* allows text truncation */
+    overflow: hidden;
+}
+
+.player-metadata {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.player-date {
+    font-size: 12px;
+    color: #999;
+}
+
+.player-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 4px;
+    max-width: 100%;
+}
+
+.player-tag {
+    font-size: 11px;
+    font-weight: 500;
+    color: #7209B7;
+    background: rgba(114, 9, 183, 0.08);
+    /* light purple bg */
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
 }
 
 .transcript-toggle {

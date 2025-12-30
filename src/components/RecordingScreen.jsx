@@ -42,6 +42,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
     const committedTextRef = useRef('');
     const tentativeTextRef = useRef('');
     const committedChunksRef = useRef([]);
+    const tagsRef = useRef([]);
 
     // Audio refs
     const audioContextRef = useRef(null);
@@ -60,8 +61,11 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
     // Transcript scroll ref
     const transcriptScrollRef = useRef(null);
 
-    // Ref to resolve when final processing completes
+    // Ref to resolve when final processing completes (regular 'complete' message)
     const finalProcessingResolveRef = useRef(null);
+
+    // Ref to resolve when FINALIZATION completes ('finalized' message)
+    const finalizationResolveRef = useRef(null);
 
     // Ref to resolve when final ondataavailable fires
     const finalDataResolveRef = useRef(null);
@@ -141,10 +145,13 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     if (chunks) {
                         committedChunksRef.current = chunks;
                     }
+                    if (e.data.tags) {
+                        tagsRef.current = e.data.tags;
+                    }
                     // Resolve the promise to signal finalization complete
-                    if (finalProcessingResolveRef.current) {
-                        finalProcessingResolveRef.current();
-                        finalProcessingResolveRef.current = null;
+                    if (finalizationResolveRef.current) {
+                        finalizationResolveRef.current();
+                        finalizationResolveRef.current = null;
                     }
                     break;
                 }
@@ -392,15 +399,15 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 }
 
                 // Set up promise to wait for finalization
-                const finalProcessingPromise = new Promise((resolve) => {
-                    finalProcessingResolveRef.current = resolve;
+                const finalizationPromise = new Promise((resolve) => {
+                    finalizationResolveRef.current = resolve;
                     setTimeout(() => {
-                        if (finalProcessingResolveRef.current) {
+                        if (finalizationResolveRef.current) {
                             console.log('[RecordingScreen] Timeout on finalize');
-                            finalProcessingResolveRef.current();
-                            finalProcessingResolveRef.current = null;
+                            finalizationResolveRef.current();
+                            finalizationResolveRef.current = null;
                         }
-                    }, 15000); // Longer timeout for finalize
+                    }, 20000); // Longer timeout for finalize (topic gen can be slow)
                 });
 
                 // Send finalize message - this will wait for any in-progress work,
@@ -411,7 +418,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 });
 
                 // Wait for finalization to complete
-                await finalProcessingPromise;
+                await finalizationPromise;
                 console.log('[RecordingScreen] Finalization complete');
             } catch (err) {
                 console.error('[RecordingScreen] Error during finalization:', err);
@@ -437,6 +444,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 audioBlob,
                 durationSeconds: elapsedTime,
                 wordTimestamps: committedChunksRef.current,
+                tags: tagsRef.current,
             });
         }
 

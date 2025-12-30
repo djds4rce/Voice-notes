@@ -136,7 +136,7 @@ function AppContent() {
   }, []);
 
   // Save a new note
-  const handleSaveNote = useCallback(async ({ transcript, audioBlob, durationSeconds, wordTimestamps }) => {
+  const handleSaveNote = useCallback(async ({ transcript, audioBlob, durationSeconds, wordTimestamps, tags }) => {
     if (!db) return;
 
     try {
@@ -145,6 +145,7 @@ function AppContent() {
         audioBlob,
         durationSeconds,
         wordTimestamps,
+        tags,
       });
 
       // Refresh notes list
@@ -257,7 +258,7 @@ function AppContent() {
   const handlePlayNote = useCallback(async (note) => {
     const noteWithAudio = await getNoteWithAudio(note.id);
     if (noteWithAudio) {
-      navigate(`/note/${note.id}`);
+      navigate(`/note/${note.id}`, { state: { autoplay: true } });
     }
   }, [getNoteWithAudio, navigate]);
 

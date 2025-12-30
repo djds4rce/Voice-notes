@@ -353,6 +353,36 @@ export function AudioPlayerV2({ note, onClose }) {
         }
     };
 
+    // Format timestamp for display
+    const formatTimestamp = (dateStr) => {
+        if (!dateStr) return '';
+
+        const date = dateStr instanceof Date ? dateStr : new Date(dateStr);
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+        const noteDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+        if (noteDate.getTime() === today.getTime()) {
+            return date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        } else if (noteDate.getTime() === yesterday.getTime()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+    };
+
     if (!note) {
         return (
             <div className="audio-player-page">
@@ -370,7 +400,23 @@ export function AudioPlayerV2({ note, onClose }) {
                         <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
                 </button>
-                <h1 className="player-title">{note.title || 'Voice Note'}</h1>
+
+                <div className="player-header-content">
+                    <h1 className="player-title">{note.title || 'Voice Note'}</h1>
+                    <div className="player-metadata">
+                        <span className="player-date">
+                            {formatTimestamp(note.created_at)}
+                        </span>
+                        {note.tags && note.tags.length > 0 && (
+                            <div className="player-tags">
+                                {note.tags.map((tag, idx) => (
+                                    <span key={idx} className="player-tag">#{tag}</span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 {/* Spacer for header balance */}
                 <div style={{ width: 44 }} />
             </header>

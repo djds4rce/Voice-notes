@@ -8,6 +8,7 @@
 
 import { WhisperTranscriber } from "./WhisperTranscriber.js";
 import { LocalAgreementProcessor } from "./LocalAgreementProcessor.js";
+import { TopicGenerator } from "./TopicGenerator.js";
 
 // ===== INSTANCES =====
 
@@ -39,6 +40,26 @@ async function handleLoad() {
     self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
 
     await transcriber.warmup();
+
+    await transcriber.warmup();
+
+    self.postMessage({ status: "loading", data: "Loading topic model..." });
+    await TopicGenerator.getInstance((progress) => {
+      // We can forward topic model progress if needed, or just let it load silently/with generic message
+      // For now, let's just log it or forward if it's significant, 
+      // but to avoid protocol confusion with Whisper progress, we might keep it simple.
+      // Or we can verify if the UI handles generic progress. 
+      // The UI maps file names to progress.
+      if (progress.status === "progress") {
+        self.postMessage({
+          status: "initiate",
+          file: progress.file,
+          name: progress.name,
+          status: progress.status,
+        });
+        self.postMessage(progress);
+      }
+    });
 
     self.postMessage({ status: "ready" });
   } catch (error) {
@@ -147,11 +168,33 @@ async function handleFinalize({ audio, language, audioWindowStart = 0 }) {
       numTokens: 0,
     });
 
+    // --- TOPIC GENERATION ---
+    let tags = [];
+    try {
+      const finalText = result.committed;
+      if (finalText && finalText.length > 50) {
+        console.log("[Worker] Generating topics...");
+        // Ensure generator is ready or load it
+        const topicGen = await TopicGenerator.getInstance((progress) => {
+          if (progress.status === "progress") {
+            console.log(`[Worker] Loading Topic Model: ${progress.file} ${progress.progress}%`);
+          }
+        });
+
+        tags = await topicGen.generateTags(finalText);
+        console.log("[Worker] Generated Tags:", tags);
+      }
+    } catch (tagError) {
+      console.error("[Worker] Topic generation failed:", tagError);
+    }
+    // ------------------------
+
     self.postMessage({
       status: "finalized",
       output: result.committed,
       committed: result.committed,
       committedChunks: agreementProcessor.getAllCommittedChunks(),
+      tags: tags
     });
 
   } catch (error) {

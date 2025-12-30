@@ -159,6 +159,15 @@ export function NoteCard({ note, onClick, onPlay, onDelete, showMatchInfo = fals
                     </div>
                 )}
 
+                {/* Topic Tags */}
+                {note.tags && note.tags.length > 0 && (
+                    <div className="note-card-tags">
+                        {note.tags.map((tag, idx) => (
+                            <span key={idx} className="note-tag">#{tag}</span>
+                        ))}
+                    </div>
+                )}
+
                 <div className="note-card-footer">
                     <span className="note-card-timestamp">
                         <span className="timestamp-icon">🕐</span>
