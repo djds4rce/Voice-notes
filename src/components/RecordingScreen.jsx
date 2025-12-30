@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Progress from './Progress';
 import './RecordingScreen.css';
 
 const WHISPER_SAMPLING_RATE = 16_000;
@@ -19,19 +20,28 @@ const MAX_SAMPLES = WHISPER_SAMPLING_RATE * MAX_AUDIO_LENGTH;
 const WINDOW_SHIFT = 20; // seconds
 const WINDOW_SHIFT_SAMPLES = WHISPER_SAMPLING_RATE * WINDOW_SHIFT;
 
-export function RecordingScreen({ worker, onSaveNote }) {
+export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressItems = [], loadingMessage = '' }) {
     const navigate = useNavigate();
+
+    // Track if we're waiting for model to load
+    const [waitingForModel, setWaitingForModel] = useState(whisperStatus !== 'ready');
 
     // Recording state
     const [recording, setRecording] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [stoppingRecording, setStoppingRecording] = useState(false); // waiting for final chunks
     const [elapsedTime, setElapsedTime] = useState(0);
 
     // Transcription state
     const [committedText, setCommittedText] = useState('');
     const [tentativeText, setTentativeText] = useState('');
     const [committedChunks, setCommittedChunks] = useState([]);
+
+    // Refs to track latest transcript values for stopRecording
+    const committedTextRef = useRef('');
+    const tentativeTextRef = useRef('');
+    const committedChunksRef = useRef([]);
 
     // Audio refs
     const audioContextRef = useRef(null);
@@ -49,6 +59,12 @@ export function RecordingScreen({ worker, onSaveNote }) {
 
     // Transcript scroll ref
     const transcriptScrollRef = useRef(null);
+
+    // Ref to resolve when final processing completes
+    const finalProcessingResolveRef = useRef(null);
+
+    // Ref to resolve when final ondataavailable fires
+    const finalDataResolveRef = useRef(null);
 
     // Track previous committed count for animation
     const prevCommittedCount = useRef(0);
@@ -87,21 +103,51 @@ export function RecordingScreen({ worker, onSaveNote }) {
                     const { committed, tentative, committedChunks: chunks } = e.data;
                     setCommittedText(committed || '');
                     setTentativeText(tentative || '');
+                    // Also update refs for stopRecording to access latest values
+                    committedTextRef.current = committed || '';
+                    tentativeTextRef.current = tentative || '';
                     if (chunks && chunks.length > 0) {
                         setCommittedChunks(chunks);
+                        committedChunksRef.current = chunks;
                     }
                     break;
                 }
 
                 case 'complete':
                     setIsProcessing(false);
-                    // Request more data if still recording
-                    setTimeout(() => {
-                        if (recorderRef.current?.state === 'recording') {
-                            recorderRef.current.requestData();
-                        }
-                    }, 100);
+                    // If we're stopping recording, resolve the promise so save can proceed
+                    if (finalProcessingResolveRef.current) {
+                        finalProcessingResolveRef.current();
+                        finalProcessingResolveRef.current = null;
+                    } else {
+                        // Request more data if still recording
+                        setTimeout(() => {
+                            if (recorderRef.current?.state === 'recording') {
+                                recorderRef.current.requestData();
+                            }
+                        }, 100);
+                    }
                     break;
+
+                case 'finalized': {
+                    setIsProcessing(false);
+                    const { committed, committedChunks: chunks } = e.data;
+                    console.log('[RecordingScreen] Received finalized signal, committed:', committed?.substring(0, 50) + '...');
+                    // Update refs with final values
+                    if (committed) {
+                        committedTextRef.current = committed;
+                        tentativeTextRef.current = ''; // No more tentative after finalize
+                    }
+                    if (chunks) {
+                        committedChunksRef.current = chunks;
+                    }
+                    // Resolve the promise to signal finalization complete
+                    if (finalProcessingResolveRef.current) {
+                        finalProcessingResolveRef.current();
+                        finalProcessingResolveRef.current = null;
+                    }
+                    break;
+                }
             }
         };
 
@@ -217,7 +263,16 @@ export function RecordingScreen({ worker, onSaveNote }) {
             recorderRef.current.ondataavailable = (e) => {
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data);
-                    processAudioChunks();
+                    console.log('[RecordingScreen] ondataavailable, chunk count:', chunksRef.current.length);
+
+                    // If we're stopping and waiting for final data, resolve the promise
+                    if (finalDataResolveRef.current) {
+                        finalDataResolveRef.current();
+                        finalDataResolveRef.current = null;
+                    } else {
+                        // Only auto-process if not stopping
+                        processAudioChunks();
+                    }
                 }
             };
 
@@ -250,6 +305,9 @@ export function RecordingScreen({ worker, onSaveNote }) {
 
     // Stop recording and save
     const stopRecording = useCallback(async () => {
+        console.log('[RecordingScreen] Stopping recording...');
+        setStoppingRecording(true);
+
         // Stop audio visualization
         if (animationRef.current) {
             cancelAnimationFrame(animationRef.current);
@@ -260,39 +318,132 @@ export function RecordingScreen({ worker, onSaveNote }) {
             clearInterval(timerRef.current);
         }
 
-        // Stop recorder
+        setRecording(false);
+        setIsSaving(true);
+
+        // Wait for any in-progress transcription to complete first
+        if (isProcessing) {
+            console.log('[RecordingScreen] Waiting for in-progress transcription...');
+            await new Promise((resolve) => {
+                finalProcessingResolveRef.current = resolve;
+                setTimeout(() => {
+                    if (finalProcessingResolveRef.current) {
+                        console.log('[RecordingScreen] Timeout waiting for in-progress transcription');
+                        finalProcessingResolveRef.current();
+                        finalProcessingResolveRef.current = null;
+                    }
+                }, 10000);
+            });
+        }
+
+        // Set up promise to wait for final data before stopping
+        let finalDataPromise = null;
         if (recorderRef.current?.state === 'recording') {
+            finalDataPromise = new Promise((resolve) => {
+                finalDataResolveRef.current = resolve;
+                // Timeout in case ondataavailable doesn't fire
+                setTimeout(() => {
+                    if (finalDataResolveRef.current) {
+                        console.log('[RecordingScreen] Timeout waiting for final data');
+                        finalDataResolveRef.current();
+                        finalDataResolveRef.current = null;
+                    }
+                }, 2000);
+            });
+
+            // Request final data and stop
+            recorderRef.current.requestData();
             recorderRef.current.stop();
         }
 
-        // Stop stream
+        // Stop stream (stop audio input)
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
         }
 
-        setRecording(false);
-        setIsSaving(true);
+        // Wait for final data to arrive
+        if (finalDataPromise) {
+            console.log('[RecordingScreen] Waiting for final data chunk...');
+            await finalDataPromise;
+            console.log('[RecordingScreen] Final data chunk received');
+        }
+
+        // Now send finalize message to process any remaining audio and commit all tentative text
+        if (chunksRef.current.length > 0 && audioContextRef.current) {
+            try {
+                const blob = new Blob(chunksRef.current, {
+                    type: recorderRef.current?.mimeType || 'audio/webm'
+                });
+                const arrayBuffer = await blob.arrayBuffer();
+                const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
+                const allAudio = audioBuffer.getChannelData(0);
+
+                console.log('[RecordingScreen] Sending finalize message...');
+
+                let audioToProcess = allAudio;
+                let audioWindowStart = 0;
+
+                if (audioToProcess.length > MAX_SAMPLES) {
+                    const excessSamples = audioToProcess.length - MAX_SAMPLES;
+                    const numShifts = Math.ceil(excessSamples / WINDOW_SHIFT_SAMPLES);
+                    const samplesToSkip = numShifts * WINDOW_SHIFT_SAMPLES;
+                    audioWindowStart = samplesToSkip / WHISPER_SAMPLING_RATE;
+                    audioToProcess = allAudio.slice(samplesToSkip, samplesToSkip + MAX_SAMPLES);
+                }
+
+                // Set up promise to wait for finalization
+                const finalProcessingPromise = new Promise((resolve) => {
+                    finalProcessingResolveRef.current = resolve;
+                    setTimeout(() => {
+                        if (finalProcessingResolveRef.current) {
+                            console.log('[RecordingScreen] Timeout on finalize');
+                            finalProcessingResolveRef.current();
+                            finalProcessingResolveRef.current = null;
+                        }
+                    }, 15000); // Longer timeout for finalize
+                });
+
+                // Send finalize message - this will wait for any in-progress work,
+                // process the audio, and commit all remaining tentative text
+                worker?.postMessage({
+                    type: 'finalize',
+                    data: { audio: audioToProcess, language: 'en', audioWindowStart },
+                });
+
+                // Wait for finalization to complete
+                await finalProcessingPromise;
+                console.log('[RecordingScreen] Finalization complete');
+            } catch (err) {
+                console.error('[RecordingScreen] Error during finalization:', err);
+            }
+        }
+
+        // Small delay to allow state updates to propagate
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Create final audio blob
         const audioBlob = new Blob(chunksRef.current, {
             type: recorderRef.current?.mimeType || 'audio/webm'
         });
 
-        // Get final transcript
-        const finalTranscript = committedText + (tentativeText ? ' ' + tentativeText : '');
+        // Get final transcript - use refs for latest values (avoid stale closure)
+        const finalTranscript = committedTextRef.current + (tentativeTextRef.current ? ' ' + tentativeTextRef.current : '');
+
+        console.log('[RecordingScreen] Final transcript:', finalTranscript.substring(0, 100) + '...');
 
         if (finalTranscript.trim().length > 0 && onSaveNote) {
             await onSaveNote({
                 transcript: finalTranscript.trim(),
                 audioBlob,
                 durationSeconds: elapsedTime,
-                wordTimestamps: committedChunks,
+                wordTimestamps: committedChunksRef.current,
             });
         }
 
         setIsSaving(false);
+        setStoppingRecording(false);
         navigate('/');
-    }, [committedText, tentativeText, elapsedTime, onSaveNote, navigate]);
+    }, [elapsedTime, onSaveNote, navigate, isProcessing, worker]);
 
     // Cancel recording
     const cancelRecording = useCallback(() => {
@@ -322,14 +473,22 @@ export function RecordingScreen({ worker, onSaveNote }) {
         navigate('/');
     }, [worker, navigate]);
 
-    // Start recording on mount
+    // Start recording on mount (only if model is ready)
     useEffect(() => {
-        startRecording();
-        return () => {
-            if (timerRef.current) clearInterval(timerRef.current);
-            if (animationRef.current) cancelAnimationFrame(animationRef.current);
-        };
-    }, []);
+        if (whisperStatus === 'ready' && waitingForModel) {
+            setWaitingForModel(false);
+            startRecording();
+        } else if (whisperStatus === 'ready' && !waitingForModel && !recording) {
+            startRecording();
+        }
+    }, [whisperStatus, waitingForModel]);
+
+    // If still waiting for model, allow cancel
+    useEffect(() => {
+        if (whisperStatus !== 'ready') {
+            setWaitingForModel(true);
+        }
+    }, [whisperStatus]);
 
     // Format time as MM:SS
     const formatTime = (seconds) => {
@@ -339,6 +498,40 @@ export function RecordingScreen({ worker, onSaveNote }) {
     };
 
     const time = formatTime(elapsedTime);
+
+    // Loading state - waiting for model
+    if (waitingForModel && whisperStatus !== 'ready') {
+        return (
+            <div className="recording-screen loading-model">
+                <div className="model-loading-container">
+                    <div className="model-loading-icon">
+                        <svg className="mic-loading" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="23" />
+                            <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
+                    </div>
+                    <h2 className="model-loading-title">
+                        {loadingMessage || 'Loading transcription model...'}
+                    </h2>
+                    <p className="model-loading-subtitle">
+                        This only happens once. The model will be cached for future use.
+                    </p>
+                    {progressItems.length > 0 && (
+                        <div className="model-progress-container">
+                            {progressItems.map(({ file, progress, total }, i) => (
+                                <Progress key={i} text={file} percentage={progress} total={total} />
+                            ))}
+                        </div>
+                    )}
+                    <button className="cancel-button model-cancel" onClick={() => navigate('/')}>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     // Saving/Processing state
     if (isSaving) {
@@ -421,7 +614,7 @@ export function RecordingScreen({ worker, onSaveNote }) {
                     />
                 ))}
             </div>
-            <p className="tap-hint">Tap to pause</p>
+
 
             {/* Controls */}
             <div className="controls">

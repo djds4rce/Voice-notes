@@ -45,11 +45,16 @@ function AppContent() {
   const [notes, setNotes] = useState([]);
   const [currentNote, setCurrentNote] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isDbLoading, setIsDbLoading] = useState(true);
+
+  // Embedding model loading state for search
+  const [embeddingStatus, setEmbeddingStatus] = useState(null);
 
   // Initialize database
   useEffect(() => {
     async function initDb() {
       try {
+        setIsDbLoading(true);
         const dbInstance = await DatabaseService.getInstance();
         setDb(dbInstance);
         // Load initial notes
@@ -58,6 +63,8 @@ function AppContent() {
         console.log('[App] Database initialized, loaded', allNotes.length, 'notes');
       } catch (error) {
         console.error('[App] Failed to initialize database:', error);
+      } finally {
+        setIsDbLoading(false);
       }
     }
     initDb();
@@ -114,8 +121,18 @@ function AppContent() {
 
   // Load Whisper model
   const loadModel = useCallback(() => {
+    if (status !== null) return; // Already loading or loaded
     worker.current?.postMessage({ type: 'load' });
     setStatus('loading');
+  }, [status]);
+
+  // Auto-load model on mount (only once)
+  const hasTriggeredLoad = useRef(false);
+  useEffect(() => {
+    if (IS_WEBGPU_AVAILABLE && !hasTriggeredLoad.current) {
+      hasTriggeredLoad.current = true;
+      loadModel();
+    }
   }, []);
 
   // Save a new note
@@ -192,7 +209,12 @@ function AppContent() {
       console.log('[App] Starting semantic search for:', query);
 
       // Get embedding service and embed the query
+      // Show loading status if model isn't loaded yet
+      if (embeddingStatus !== 'ready') {
+        setEmbeddingStatus('loading');
+      }
       const embeddingService = await EmbeddingService.getInstance();
+      setEmbeddingStatus('ready');
       const queryEmbedding = await embeddingService.embed(query);
 
       // Compute similarity for all notes
@@ -239,47 +261,12 @@ function AppContent() {
     }
   }, [getNoteWithAudio, navigate]);
 
-  // Model not loaded - show load screen
-  if (status === null) {
+  // Check if WebGPU is available - show error if not
+  if (!IS_WEBGPU_AVAILABLE) {
     return (
       <div className="app-container center">
-        <div className="load-screen">
-          <div className="logo-container">
-            <img src="/logo192.png" alt="Voice Notes" className="app-logo" />
-          </div>
-          <h1 className="app-title">Voice Notes</h1>
-          <p className="app-subtitle">AI-powered voice memos with semantic search</p>
-
-          <p className="load-description">
-            Load the Whisper model to start recording. The model (~200 MB)
-            will be cached and reused when you revisit.
-          </p>
-
-          {IS_WEBGPU_AVAILABLE ? (
-            <button className="load-button" onClick={loadModel}>
-              Load Model
-            </button>
-          ) : (
-            <div className="error-message">
-              WebGPU is not supported by this browser
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Model loading
-  if (status === 'loading') {
-    return (
-      <div className="app-container center">
-        <div className="loading-screen">
-          <h2 className="loading-title">{loadingMessage}</h2>
-          <div className="progress-container">
-            {progressItems.map(({ file, progress, total }, i) => (
-              <Progress key={i} text={file} percentage={progress} total={total} />
-            ))}
-          </div>
+        <div className="error-message">
+          WebGPU is not supported by this browser. Please use a compatible browser like Chrome or Edge.
         </div>
       </div>
     );
@@ -298,6 +285,8 @@ function AppContent() {
               onPlayNote={handlePlayNote}
               onSemanticSearch={handleSemanticSearch}
               isSearching={isSearching}
+              isEmbeddingLoading={embeddingStatus === 'loading'}
+              isLoading={isDbLoading}
             />
           }
         />
@@ -307,6 +296,9 @@ function AppContent() {
             <RecordingScreen
               worker={worker.current}
               onSaveNote={handleSaveNote}
+              whisperStatus={status}
+              progressItems={progressItems}
+              loadingMessage={loadingMessage}
             />
           }
         />

@@ -20,7 +20,9 @@ export function NotesListPage({
     onDeleteNote,
     onPlayNote,
     onSemanticSearch,
-    isSearching
+    isSearching,
+    isEmbeddingLoading = false,
+    isLoading = false
 }) {
     const navigate = useNavigate();
     const [searchOpen, setSearchOpen] = useState(false);
@@ -245,12 +247,29 @@ export function NotesListPage({
             {(isSearching || searchPending) && (
                 <div className="search-loading">
                     <div className="loading-spinner"></div>
-                    <p>Searching with AI...</p>
+                    <p>{isEmbeddingLoading ? 'Loading AI search model...' : 'Searching with AI...'}</p>
                 </div>
             )}
 
             <div className="notes-content">
-                {!(isSearching || searchPending) && hasNotes ? (
+                {/* Initial Loading State */}
+                {isLoading && (
+                    <div className="initial-loading">
+                        <div className="initial-loading-icon">
+                            <svg className="notes-loading-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                        <h2 className="initial-loading-title">Loading your notes...</h2>
+                        <p className="initial-loading-subtitle">Just a moment while we gather your thoughts</p>
+                    </div>
+                )}
+
+                {!isLoading && !(isSearching || searchPending) && hasNotes ? (
                     hasResults ? (
                         <>
                             {groupedNotes.today.length > 0 && (
@@ -344,7 +363,7 @@ export function NotesListPage({
                             <p>Try different keywords or check your spelling</p>
                         </div>
                     ) : null
-                ) : !(isSearching || searchPending) && !hasNotes ? (
+                ) : !isLoading && !(isSearching || searchPending) && !hasNotes ? (
                     <div className="empty-state">
                         <div className="empty-icon">🎙️</div>
                         <h2>No voice notes yet</h2>

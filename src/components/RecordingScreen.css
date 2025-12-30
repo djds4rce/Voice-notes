@@ -132,7 +132,7 @@
 }
 
 .transcript-scroll-area {
-  max-height: 150px;
+  max-height: 350px;
   overflow-y: auto;
   scroll-behavior: smooth;
   padding: 10px 0;
@@ -240,11 +240,7 @@
   transition: height 0.1s ease-out;
 }
 
-.tap-hint {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 40px;
-}
+
 
 /* Controls */
 .controls {
@@ -389,4 +385,72 @@
 
 .cancel-icon {
   font-size: 18px;
+}
+
+/* Model Loading State */
+.recording-screen.loading-model {
+  justify-content: center;
+}
+
+.model-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 320px;
+}
+
+.model-loading-icon {
+  width: 100px;
+  height: 100px;
+  border: 3px solid #E74C3C;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  animation: modelPulse 2s ease-in-out infinite;
+}
+
+.mic-loading {
+  width: 40px;
+  height: 40px;
+  color: #E74C3C;
+}
+
+@keyframes modelPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.model-loading-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.model-loading-subtitle {
+  font-size: 14px;
+  color: #999;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+}
+
+.model-progress-container {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.model-cancel {
+  margin-top: 16px;
 }

@@ -205,6 +205,38 @@ export class LocalAgreementProcessor {
     }
 
     /**
+     * Finalize transcription by committing all remaining buffer words
+     * Called when recording stops - no more local agreement needed
+     */
+    finalize() {
+        // Commit all words in buffer (tentative) since we won't get more confirmations
+        if (this.buffer.length > 0) {
+            console.log(`[LocalAgreement] Finalizing: committing ${this.buffer.length} remaining buffer words`);
+            for (const word of this.buffer) {
+                this.allCommitted.push(word);
+                this.lastCommittedTime = word.end;
+                this.lastCommittedWord = word.text;
+            }
+            this.committedInBuffer.push(...this.buffer);
+            this.buffer = [];
+        }
+
+        // Also commit any words in 'new' buffer
+        if (this.new.length > 0) {
+            console.log(`[LocalAgreement] Finalizing: committing ${this.new.length} remaining new words`);
+            for (const word of this.new) {
+                this.allCommitted.push(word);
+                this.lastCommittedTime = word.end;
+                this.lastCommittedWord = word.text;
+            }
+            this.committedInBuffer.push(...this.new);
+            this.new = [];
+        }
+
+        return this._buildResult();
+    }
+
+    /**
      * Get all committed chunks with timestamps
      * @returns {Array<{text: string, start: number, end: number}>}
      */
