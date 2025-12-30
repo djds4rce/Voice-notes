@@ -1,0 +1,237 @@
+/**
+ * NoteCard Styles
+ */
+
+.note-card {
+    background: #FFF;
+    border-radius: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.note-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.note-card:active {
+    transform: translateY(0);
+}
+
+.note-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.note-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.note-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    flex: 1;
+    line-height: 1.3;
+}
+
+.note-card-badges {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.note-card-duration {
+    font-size: 12px;
+    font-weight: 500;
+    color: #E74C3C;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+}
+
+/* Similarity Badge */
+.similarity-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.similarity-badge.high {
+    background: rgba(46, 204, 113, 0.15);
+    color: #27ae60;
+}
+
+.similarity-badge.medium {
+    background: rgba(241, 196, 15, 0.15);
+    color: #d4a106;
+}
+
+.similarity-badge.low {
+    background: rgba(149, 165, 166, 0.15);
+    color: #7f8c8d;
+}
+
+.note-card-preview {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Highlight search terms */
+.note-card-preview mark.highlight,
+mark.highlight {
+    background: rgba(231, 76, 60, 0.2);
+    color: #E74C3C;
+    font-weight: 600;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+/* Match Info Section */
+.match-info {
+    margin-top: 4px;
+}
+
+.matched-words {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.match-label {
+    font-size: 11px;
+    color: #999;
+    font-weight: 500;
+}
+
+.match-chip {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: rgba(231, 76, 60, 0.1);
+    color: #E74C3C;
+}
+
+.match-chip.exact {
+    background: rgba(231, 76, 60, 0.15);
+    color: #C0392B;
+}
+
+.match-chip.semantic {
+    background: rgba(155, 89, 182, 0.15);
+    color: #8e44ad;
+}
+
+/* Semantic Match Label */
+.semantic-match-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #8e44ad;
+}
+
+.semantic-icon {
+    font-size: 12px;
+}
+
+.note-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.note-card-timestamp {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #999;
+}
+
+.timestamp-icon {
+    font-size: 12px;
+}
+
+.note-card-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.play-button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #E5E5E5;
+    background: #FFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.play-button:hover {
+    border-color: #E74C3C;
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.play-button svg {
+    width: 14px;
+    height: 14px;
+    color: #666;
+    margin-left: 2px;
+}
+
+.play-button:hover svg {
+    color: #E74C3C;
+}
+
+/* Delete Button */
+.delete-button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #E5E5E5;
+    background: #FFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.delete-button:hover {
+    border-color: #E74C3C;
+    background: rgba(231, 76, 60, 0.1);
+}
+
+.delete-button svg {
+    width: 14px;
+    height: 14px;
+    color: #999;
+}
+
+.delete-button:hover svg {
+    color: #E74C3C;
+}

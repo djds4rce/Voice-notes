@@ -82,10 +82,25 @@ export class WhisperTranscriber {
         const endTime = performance.now();
         const duration = (endTime - startTime) / 1000;
 
-        // Clean up text
+        // Regex to match special tokens that should be filtered out
+        // Matches: [BLANK_AUDIO], [music], (upbeat music), [laughter], etc.
+        const specialTokenRegex = /^\s*[\[\(][^\]\)]*[\]\)]\s*$/i;
+
+        // Helper to check if text is a real word (not a special token)
+        const isRealWord = (text) => {
+            if (!text || text.trim().length === 0) return false;
+            // Filter out special tokens in brackets or parentheses
+            if (specialTokenRegex.test(text)) return false;
+            // Filter out single punctuation or special characters
+            if (/^[^\w]+$/.test(text)) return false;
+            return true;
+        };
+
+        // Clean up text - remove all special tokens
         let text = result.text || "";
         text = text
-            .replace(/\[BLANK_AUDIO\]/gi, "")
+            .replace(/\[[^\]]*\]/g, "")  // Remove [anything]
+            .replace(/\([^)]*\)/g, "")   // Remove (anything) 
             .replace(/\s+/g, " ")
             .trim();
 
@@ -94,16 +109,18 @@ export class WhisperTranscriber {
 
         if (hasWordTimestamps && result.chunks) {
             // Word-level timestamps: [{text: " And", timestamp: [0, 0.78]}, ...]
-            chunks = result.chunks.map(chunk => ({
-                text: chunk.text?.trim() || "",
-                start: chunk.timestamp?.[0] ?? 0,
-                end: chunk.timestamp?.[1] ?? 0,
-            })).filter(chunk => chunk.text.length > 0);
+            chunks = result.chunks
+                .map(chunk => ({
+                    text: chunk.text?.trim() || "",
+                    start: chunk.timestamp?.[0] ?? 0,
+                    end: chunk.timestamp?.[1] ?? 0,
+                }))
+                .filter(chunk => isRealWord(chunk.text));
         } else if (result.chunks) {
             // Segment-level timestamps: split into words with estimated times
             chunks = [];
             for (const segment of result.chunks) {
-                const words = (segment.text || "").trim().split(/\s+/).filter(w => w.length > 0);
+                const words = (segment.text || "").trim().split(/\s+/).filter(w => isRealWord(w));
                 const segStart = segment.timestamp?.[0] ?? 0;
                 const segEnd = segment.timestamp?.[1] ?? 0;
                 const wordDuration = words.length > 0 ? (segEnd - segStart) / words.length : 0;
@@ -118,7 +135,7 @@ export class WhisperTranscriber {
             }
         } else {
             // No timestamps at all - estimate based on text
-            const words = text.split(/\s+/).filter(w => w.length > 0);
+            const words = text.split(/\s+/).filter(w => isRealWord(w));
             const wordDuration = 0.3;
             chunks = words.map((word, i) => ({
                 text: word,

@@ -1,0 +1,392 @@
+/**
+ * RecordingScreen Styles
+ * 
+ * Design tokens from mockups:
+ * - Coral/red accent: #E74C3C
+ * - Cream background: #FAF8F5
+ * - Rounded UI elements
+ */
+
+.recording-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
+  padding: 20px;
+  position: relative;
+}
+
+/* Header */
+.recording-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 40px;
+}
+
+.close-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FFF;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.recording-dot {
+  width: 8px;
+  height: 8px;
+  background: #E74C3C;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}
+
+.settings-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  color: #666;
+  cursor: pointer;
+}
+
+/* Timer */
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #F5F0EB;
+  padding: 16px 24px;
+  border-radius: 24px;
+  margin-bottom: 40px;
+}
+
+.timer-segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timer-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  font-feature-settings: 'tnum';
+}
+
+.timer-label {
+  font-size: 10px;
+  color: #999;
+  letter-spacing: 1px;
+}
+
+.timer-separator {
+  font-size: 32px;
+  font-weight: 700;
+  color: #999;
+  margin: 0 4px;
+  align-self: flex-start;
+  margin-top: 8px;
+}
+
+/* Transcript */
+.transcript-container {
+  position: relative;
+  padding: 20px 40px;
+  max-width: 400px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.transcript-scroll-area {
+  max-height: 150px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 10px 0;
+
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(231, 76, 60, 0.3) transparent;
+}
+
+.transcript-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.transcript-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.transcript-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(231, 76, 60, 0.3);
+  border-radius: 2px;
+}
+
+.quote-mark {
+  position: absolute;
+  font-size: 48px;
+  color: rgba(231, 76, 60, 0.2);
+  font-family: Georgia, serif;
+  line-height: 1;
+  z-index: 1;
+}
+
+.quote-mark.left {
+  top: 0;
+  left: 0;
+}
+
+.quote-mark.right {
+  bottom: 0;
+  right: 0;
+}
+
+.transcript-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  line-height: 1.4;
+  margin: 0;
+  min-height: 50px;
+}
+
+.transcript-text .word-new {
+  animation: wordFadeIn 0.3s ease-out;
+}
+
+@keyframes wordFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tentative-text {
+  color: #999;
+  font-style: italic;
+}
+
+.cursor {
+  color: #E74C3C;
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Waveform */
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 50px;
+  margin-bottom: 10px;
+}
+
+.waveform-bar {
+  width: 4px;
+  background: linear-gradient(180deg, #E74C3C 0%, #FADBD8 100%);
+  border-radius: 2px;
+  transition: height 0.1s ease-out;
+}
+
+.tap-hint {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 40px;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: auto;
+  padding-bottom: 40px;
+}
+
+.stop-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 16px 48px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stop-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(231, 76, 60, 0.4);
+}
+
+.stop-button:active {
+  transform: translateY(0);
+}
+
+.stop-icon {
+  font-size: 12px;
+}
+
+.cancel-text-button {
+  background: transparent;
+  border: none;
+  color: #999;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 16px;
+}
+
+.cancel-text-button:hover {
+  color: #666;
+}
+
+/* Saving State */
+.recording-screen.saving {
+  justify-content: center;
+}
+
+.saving-animation {
+  margin-bottom: 32px;
+}
+
+.pencil-circle {
+  width: 120px;
+  height: 120px;
+  border: 3px solid #E74C3C;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: circleGrow 2s ease-in-out infinite;
+}
+
+.pencil-circle::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border: 2px solid rgba(231, 76, 60, 0.2);
+  border-radius: 50%;
+}
+
+@keyframes circleGrow {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.pencil-icon {
+  width: 40px;
+  height: 40px;
+  color: #E74C3C;
+  animation: pencilWrite 1s ease-in-out infinite;
+}
+
+@keyframes pencilWrite {
+
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+.saving-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.saving-subtitle {
+  font-size: 16px;
+  color: #999;
+  margin: 0 0 48px 0;
+}
+
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(231, 76, 60, 0.1);
+  color: #E74C3C;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cancel-icon {
+  font-size: 18px;
+}

@@ -52,6 +52,7 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
       output,
       committed: result.committed,
       tentative: result.tentative,
+      committedChunks: agreementProcessor.getAllCommittedChunks(),
       tps,
       numTokens: chunks.length,
     });

@@ -203,4 +203,12 @@ export class LocalAgreementProcessor {
     getCommittedText() {
         return this.allCommitted.map(w => w.text).join(" ");
     }
+
+    /**
+     * Get all committed chunks with timestamps
+     * @returns {Array<{text: string, start: number, end: number}>}
+     */
+    getAllCommittedChunks() {
+        return [...this.allCommitted];
+    }
 }

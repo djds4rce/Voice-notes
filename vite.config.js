@@ -8,4 +8,11 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
   },
+  optimizeDeps: {
+    exclude: ['@electric-sql/pglite'],
+  },
+  worker: {
+    format: 'es',
+  },
 })
+
