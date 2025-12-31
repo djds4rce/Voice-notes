@@ -33,8 +33,67 @@ export function NotesListPage({
     const [searchPending, setSearchPending] = useState(false); // Immediate feedback when typing
     const [hasSearched, setHasSearched] = useState(false);
 
+    // Permission state
+    const [permissionState, setPermissionState] = useState('idle'); // idle, checking, denied, error
+    const [permissionError, setPermissionError] = useState('');
+
     // Track search version to cancel stale results
     const searchVersionRef = useRef(0);
+
+    // Request microphone permission before navigating to record
+    const handleRecordClick = async () => {
+        setPermissionState('checking');
+        setPermissionError('');
+
+        try {
+            // First check if permission API is available (not all browsers support it)
+            if (navigator.permissions && navigator.permissions.query) {
+                try {
+                    const result = await navigator.permissions.query({ name: 'microphone' });
+                    if (result.state === 'denied') {
+                        setPermissionState('denied');
+                        setPermissionError('Microphone access was denied. Please allow microphone access in your browser settings.');
+                        return;
+                    }
+                } catch (e) {
+                    // Permission query might not be supported for microphone in some browsers
+                    // Continue to try getUserMedia
+                }
+            }
+
+            // Request actual microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Got permission - stop the stream immediately (we just needed to check)
+            stream.getTracks().forEach(track => track.stop());
+
+            // Navigate to record
+            setPermissionState('idle');
+            navigate('/record');
+        } catch (error) {
+            console.error('[NotesListPage] Microphone permission error:', error);
+
+            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                setPermissionState('denied');
+                setPermissionError('Microphone access was denied. Please allow microphone access to record voice notes.');
+            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                setPermissionState('error');
+                setPermissionError('No microphone found. Please connect a microphone and try again.');
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                setPermissionState('error');
+                setPermissionError('Microphone is in use by another application. Please close other apps using the microphone.');
+            } else {
+                setPermissionState('error');
+                setPermissionError(`Could not access microphone: ${error.message || 'Unknown error'}`);
+            }
+        }
+    };
+
+    // Dismiss permission error
+    const dismissPermissionError = () => {
+        setPermissionState('idle');
+        setPermissionError('');
+    };
 
     // Debounced search (semantic or keyword based on setting)
     useEffect(() => {
@@ -383,17 +442,51 @@ export function NotesListPage({
 
             {/* FAB */}
             <button
-                className="fab"
-                onClick={() => navigate('/record')}
+                className={`fab ${permissionState === 'checking' ? 'fab-loading' : ''}`}
+                onClick={handleRecordClick}
+                disabled={permissionState === 'checking'}
                 aria-label="Record new note"
             >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" y1="19" x2="12" y2="23" />
-                    <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
+                {permissionState === 'checking' ? (
+                    <div className="fab-spinner" />
+                ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                )}
             </button>
+
+            {/* Permission Error Modal */}
+            {(permissionState === 'denied' || permissionState === 'error') && (
+                <div className="permission-modal-overlay" onClick={dismissPermissionError}>
+                    <div className="permission-modal" onClick={e => e.stopPropagation()}>
+                        <div className="permission-modal-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                                <line x1="12" y1="19" x2="12" y2="23" />
+                                <line x1="8" y1="23" x2="16" y2="23" />
+                                <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="3" />
+                            </svg>
+                        </div>
+                        <h3 className="permission-modal-title">
+                            {permissionState === 'denied' ? 'Microphone Access Required' : 'Microphone Error'}
+                        </h3>
+                        <p className="permission-modal-message">{permissionError}</p>
+                        <div className="permission-modal-actions">
+                            <button className="permission-modal-button secondary" onClick={dismissPermissionError}>
+                                Cancel
+                            </button>
+                            <button className="permission-modal-button primary" onClick={handleRecordClick}>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
