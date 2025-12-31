@@ -67,21 +67,19 @@
         }
 
         /* Dark Mode */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --color-paper: #1a1a1a;
-                --color-paper-rgb: 26, 26, 26;
-                --color-pencil: #e8e4dc;
-                --color-pencil-rgb: 232, 228, 220;
-                --color-muted: #3a3a3a;
-                --color-card: #252525;
-                --color-accent: #ff6b6b;
-                --color-blue-pen: #5b8fd4;
-                --color-dot-pattern: #2a2a2a;
-                --shadow-hand: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
-                --shadow-hand-sm: 2px 2px 0px 0px rgba(0, 0, 0, 0.5);
-                --shadow-hand-subtle: 3px 3px 0px 0px rgba(0, 0, 0, 0.2);
-            }
+        [data-theme="dark"] {
+            --color-paper: #1a1a1a;
+            --color-paper-rgb: 26, 26, 26;
+            --color-pencil: #e8e4dc;
+            --color-pencil-rgb: 232, 228, 220;
+            --color-muted: #3a3a3a;
+            --color-card: #252525;
+            --color-accent: #ff6b6b;
+            --color-blue-pen: #5b8fd4;
+            --color-dot-pattern: #2a2a2a;
+            --shadow-hand: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+            --shadow-hand-sm: 2px 2px 0px 0px rgba(0, 0, 0, 0.5);
+            --shadow-hand-subtle: 3px 3px 0px 0px rgba(0, 0, 0, 0.2);
         }
 
         * {
@@ -449,6 +447,16 @@
 <body>
     <!-- Cross-Origin Isolation Service Worker -->
     <script src="coi-serviceworker.js"></script>
+
+    <!-- Theme initialization from localStorage -->
+    <script>
+        (function () {
+            const darkMode = localStorage.getItem('dark-mode');
+            if (darkMode === 'true') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
 
     <div class="landing-page">
         <!-- Hero Section -->
