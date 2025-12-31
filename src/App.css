@@ -26,11 +26,11 @@ html {
 
 body {
   font-family: 'Patrick Hand', cursive;
-  background-color: #fdfbf7;
-  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-color: var(--color-paper);
+  background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
   background-size: 24px 24px;
   min-height: 100vh;
-  color: #2d2d2d;
+  color: var(--color-pencil);
 }
 
 /* App Container */
@@ -38,8 +38,8 @@ body {
   min-height: 100vh;
   max-width: 500px;
   margin: 0 auto;
-  background-color: #fdfbf7;
-  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-color: var(--color-paper);
+  background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -62,11 +62,11 @@ body {
   width: 120px;
   height: 120px;
   margin-bottom: 24px;
-  border: 3px solid #2d2d2d;
+  border: 3px solid var(--color-pencil);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   padding: 16px;
-  background: white;
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  background: var(--color-card);
+  box-shadow: var(--shadow-hand);
 }
 
 .app-logo {
@@ -79,14 +79,14 @@ body {
   font-family: 'Kalam', cursive;
   font-size: 36px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   margin: 0 0 8px 0;
 }
 
 .app-subtitle {
   font-family: 'Patrick Hand', cursive;
   font-size: 18px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.7;
   margin: 0 0 32px 0;
 }
@@ -95,7 +95,7 @@ body {
   max-width: 300px;
   font-family: 'Patrick Hand', cursive;
   font-size: 16px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.6;
   line-height: 1.6;
   margin-bottom: 32px;
@@ -103,22 +103,22 @@ body {
 
 .load-button {
   font-family: 'Patrick Hand', cursive;
-  background: white;
-  color: #2d2d2d;
-  border: 3px solid #2d2d2d;
+  background: var(--color-card);
+  color: var(--color-pencil);
+  border: 3px solid var(--color-pencil);
   border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
   padding: 16px 48px;
   font-size: 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand);
   transition: all 0.1s ease;
 }
 
 .load-button:hover {
-  background: #ff4d4d;
+  background: var(--color-accent);
   color: white;
-  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-sm);
   transform: translate(2px, 2px);
 }
 
@@ -151,7 +151,7 @@ body {
   font-family: 'Kalam', cursive;
   font-size: 20px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   margin-bottom: 24px;
   text-align: center;
 }
@@ -203,18 +203,18 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #e5e0d8;
+  background: var(--color-muted);
   border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #2d2d2d;
+  background: var(--color-pencil);
 }
 
 /* Focus styles */
 button:focus-visible,
 input:focus-visible {
-  outline: 3px solid #2d5da1;
+  outline: 3px solid var(--color-blue-pen);
   outline-offset: 2px;
 }
 

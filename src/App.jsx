@@ -12,6 +12,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 // Components
+import { LandingPage } from './components/LandingPage';
 import { NotesListPage } from './components/NotesListPage';
 import { RecordingScreen } from './components/RecordingScreen';
 import { AudioPlayerV2 as AudioPlayer } from './components/AudioPlayerV2';
@@ -93,6 +94,22 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('tagging-enabled', taggingEnabled);
   }, [taggingEnabled]);
+
+  // Dark mode setting
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark-mode');
+    return saved !== null ? saved === 'true' : false; // Default to light mode
+  });
+
+  // Apply dark mode to document and persist
+  useEffect(() => {
+    localStorage.setItem('dark-mode', darkMode);
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [darkMode]);
 
   // Auto-disable features when language is not English
   const isEnglish = language === 'en';
@@ -347,6 +364,10 @@ function AppContent() {
       <Routes>
         <Route
           path="/"
+          element={<LandingPage />}
+        />
+        <Route
+          path="/notes"
           element={
             <NotesListPage
               notes={notes}
@@ -388,6 +409,8 @@ function AppContent() {
               taggingEnabled={taggingEnabled}
               setTaggingEnabled={setTaggingEnabled}
               isEnglish={isEnglish}
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
             />
           }
         />
@@ -400,10 +423,10 @@ function AppContent() {
             />
           }
         />
-        {/* Redirect /search to main page since search is now inline */}
+        {/* Redirect /search to notes page since search is now inline */}
         <Route
           path="/search"
-          element={<Navigate to="/" replace />}
+          element={<Navigate to="/notes" replace />}
         />
       </Routes>
     </div>

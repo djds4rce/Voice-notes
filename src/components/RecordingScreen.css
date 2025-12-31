@@ -7,8 +7,8 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background-color: #fdfbf7;
-  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-color: var(--color-paper);
+  background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
   background-size: 24px 24px;
   padding: 20px;
   position: relative;
@@ -27,13 +27,13 @@
 .close-button {
   width: 44px;
   height: 44px;
-  border: 2px solid #2d2d2d;
-  background: #FFF;
+  border: 2px solid var(--color-pencil);
+  background: var(--color-card);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   font-size: 24px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   cursor: pointer;
-  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-sm);
   transition: all 0.1s ease;
   display: flex;
   align-items: center;
@@ -41,8 +41,8 @@
 }
 
 .close-button:hover {
-  background: #e5e0d8;
-  box-shadow: 1px 1px 0px 0px #2d2d2d;
+  background: var(--color-muted);
+  box-shadow: 1px 1px 0px 0px var(--color-pencil);
   transform: translate(1px, 1px);
 }
 
@@ -50,22 +50,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #FFF;
-  border: 2px solid #2d2d2d;
+  background: var(--color-card);
+  border: 2px solid var(--color-pencil);
   padding: 8px 16px;
   border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
   font-family: 'Patrick Hand', cursive;
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 1px;
-  color: #2d2d2d;
-  box-shadow: 2px 2px 0px 0px rgba(45, 45, 45, 0.1);
+  color: var(--color-pencil);
+  box-shadow: var(--shadow-hand-subtle);
 }
 
 .recording-dot {
   width: 10px;
   height: 10px;
-  background: #ff4d4d;
+  background: var(--color-accent);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   animation: pulse 1.5s ease-in-out infinite;
 }
@@ -87,13 +87,13 @@
 .settings-button {
   width: 44px;
   height: 44px;
-  border: 2px solid #2d2d2d;
-  background: #FFF;
+  border: 2px solid var(--color-pencil);
+  background: var(--color-card);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   font-size: 20px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   cursor: pointer;
-  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-sm);
   transition: all 0.1s ease;
   display: flex;
   align-items: center;
@@ -101,8 +101,8 @@
 }
 
 .settings-button:hover {
-  background: #e5e0d8;
-  box-shadow: 1px 1px 0px 0px #2d2d2d;
+  background: var(--color-muted);
+  box-shadow: 1px 1px 0px 0px var(--color-pencil);
   transform: translate(1px, 1px);
 }
 
@@ -118,12 +118,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #FFF;
-  border: 3px solid #2d2d2d;
+  background: var(--color-card);
+  border: 3px solid var(--color-pencil);
   padding: 20px 32px;
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   margin-bottom: 40px;
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand);
 }
 
 .timer-segment {
@@ -136,14 +136,14 @@
   font-family: 'Kalam', cursive;
   font-size: 40px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   font-feature-settings: 'tnum';
 }
 
 .timer-label {
   font-family: 'Patrick Hand', cursive;
   font-size: 12px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.5;
   letter-spacing: 1px;
 }
@@ -152,7 +152,7 @@
   font-family: 'Kalam', cursive;
   font-size: 40px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.5;
   margin: 0 4px;
   align-self: flex-start;
@@ -213,7 +213,7 @@
   font-family: 'Patrick Hand', cursive;
   font-size: 26px;
   font-weight: 400;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   text-align: center;
   line-height: 1.5;
   margin: 0;
@@ -237,13 +237,13 @@
 }
 
 .tentative-text {
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.5;
   font-style: italic;
 }
 
 .cursor {
-  color: #ff4d4d;
+  color: var(--color-accent);
   animation: blink 1s step-end infinite;
   margin-left: 2px;
 }
@@ -292,21 +292,21 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: #ff4d4d;
+  background: var(--color-accent);
   color: white;
-  border: 4px solid #2d2d2d;
+  border: 4px solid var(--color-pencil);
   border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
   padding: 18px 56px;
   font-family: 'Patrick Hand', cursive;
   font-size: 22px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 6px 6px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-lg);
   transition: all 0.1s ease;
 }
 
 .stop-button:hover {
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand);
   transform: translate(2px, 2px);
 }
 
@@ -323,7 +323,7 @@
   background: transparent;
   border: none;
   font-family: 'Patrick Hand', cursive;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.6;
   font-size: 18px;
   cursor: pointer;
@@ -334,7 +334,7 @@
 
 .cancel-text-button:hover {
   opacity: 1;
-  color: #ff4d4d;
+  color: var(--color-accent);
 }
 
 /* Saving State */
@@ -349,14 +349,14 @@
 .pencil-circle {
   width: 120px;
   height: 120px;
-  border: 4px solid #2d2d2d;
+  border: 4px solid var(--color-pencil);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: white;
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  background: var(--color-card);
+  box-shadow: var(--shadow-hand);
   animation: circleGrow 2s ease-in-out infinite;
 }
 
@@ -383,7 +383,7 @@
 .pencil-icon {
   width: 48px;
   height: 48px;
-  color: #ff4d4d;
+  color: var(--color-accent);
   animation: pencilWrite 1s ease-in-out infinite;
 }
 
@@ -403,7 +403,7 @@
   font-family: 'Kalam', cursive;
   font-size: 28px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   margin: 0 0 8px 0;
   text-align: center;
 }
@@ -411,7 +411,7 @@
 .saving-subtitle {
   font-family: 'Patrick Hand', cursive;
   font-size: 18px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.6;
   margin: 0 0 48px 0;
 }
@@ -420,23 +420,23 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #e5e0d8;
-  color: #2d2d2d;
-  border: 2px solid #2d2d2d;
+  background: var(--color-muted);
+  color: var(--color-pencil);
+  border: 2px solid var(--color-pencil);
   border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
   padding: 12px 32px;
   font-family: 'Patrick Hand', cursive;
   font-size: 18px;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 3px 3px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-sm);
   transition: all 0.1s ease;
 }
 
 .cancel-button:hover {
-  background: #ff4d4d;
+  background: var(--color-accent);
   color: white;
-  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  box-shadow: var(--shadow-hand-sm);
   transform: translate(1px, 1px);
 }
 
@@ -460,21 +460,21 @@
 .model-loading-icon {
   width: 100px;
   height: 100px;
-  border: 4px solid #2d2d2d;
+  border: 4px solid var(--color-pencil);
   border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 24px;
-  background: white;
-  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  background: var(--color-card);
+  box-shadow: var(--shadow-hand);
   animation: modelPulse 2s ease-in-out infinite;
 }
 
 .mic-loading {
   width: 44px;
   height: 44px;
-  color: #ff4d4d;
+  color: var(--color-accent);
 }
 
 @keyframes modelPulse {
@@ -493,14 +493,14 @@
   font-family: 'Kalam', cursive;
   font-size: 24px;
   font-weight: 700;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   margin: 0 0 8px 0;
 }
 
 .model-loading-subtitle {
   font-family: 'Patrick Hand', cursive;
   font-size: 16px;
-  color: #2d2d2d;
+  color: var(--color-pencil);
   opacity: 0.6;
   margin: 0 0 24px 0;
   line-height: 1.4;

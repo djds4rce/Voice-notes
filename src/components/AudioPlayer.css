@@ -4,8 +4,8 @@
 
 .audio-player-page {
     min-height: 100vh;
-    background-color: #fdfbf7;
-    background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+    background-color: var(--color-paper);
+    background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
     background-size: 24px 24px;
     display: flex;
     flex-direction: column;
@@ -22,27 +22,27 @@
 .back-button {
     width: 48px;
     height: 48px;
-    border: 2px solid #2d2d2d;
-    background: #FFF;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
     transition: all 0.1s ease;
 }
 
 .back-button:hover {
-    background: #e5e0d8;
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    background: var(--color-muted);
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
     transform: translate(1px, 1px);
 }
 
 .back-button svg {
     width: 24px;
     height: 24px;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     stroke-width: 2.5;
 }
 
@@ -50,7 +50,7 @@
     font-family: 'Kalam', cursive;
     font-size: 20px;
     font-weight: 700;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -80,7 +80,7 @@
 .player-date {
     font-family: 'Patrick Hand', cursive;
     font-size: 14px;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     opacity: 0.6;
 }
 
@@ -97,10 +97,10 @@
     font-family: 'Patrick Hand', cursive;
     font-size: 13px;
     font-weight: 500;
-    color: #2d5da1;
+    color: var(--color-blue-pen);
     background: rgba(45, 93, 161, 0.1);
     padding: 2px 8px;
-    border: 1px dashed #2d5da1;
+    border: 1px dashed var(--color-blue-pen);
     border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     white-space: nowrap;
 }
@@ -108,31 +108,31 @@
 .transcript-toggle {
     width: 48px;
     height: 48px;
-    border: 2px solid #2d2d2d;
-    background: #FFF;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
     transition: all 0.1s ease;
 }
 
 .transcript-toggle:hover {
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
     transform: translate(1px, 1px);
 }
 
 .transcript-toggle.active {
-    background: #ff4d4d;
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    background: var(--color-accent);
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
 }
 
 .transcript-toggle svg {
     width: 20px;
     height: 20px;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     stroke-width: 2.5;
 }
 
@@ -153,7 +153,7 @@
     font-family: 'Patrick Hand', cursive;
     padding: 40px;
     text-align: center;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     opacity: 0.6;
 }
 
@@ -163,17 +163,17 @@
     max-height: 45vh;
     overflow-y: auto;
     padding: 20px;
-    background: white;
-    border: 2px solid #2d2d2d;
+    background: var(--color-card);
+    border: 2px solid var(--color-pencil);
     border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
-    box-shadow: 4px 4px 0px 0px rgba(45, 45, 45, 0.1);
+    box-shadow: var(--shadow-hand-subtle);
 }
 
 .full-transcript {
     font-family: 'Patrick Hand', cursive;
     font-size: 20px;
     line-height: 1.8;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     margin: 0;
 }
 
@@ -187,7 +187,7 @@
     padding: 2px 0;
     border-radius: 4px;
     transition: all 0.15s ease;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     opacity: 0.5;
 }
 
@@ -200,7 +200,7 @@
 }
 
 .transcript-word.active {
-    color: #ff4d4d;
+    color: var(--color-accent);
     font-weight: 700;
     opacity: 1;
     background: rgba(255, 77, 77, 0.2);
@@ -247,7 +247,7 @@
 .time {
     font-family: 'Patrick Hand', cursive;
     font-size: 14px;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     opacity: 0.6;
     font-feature-settings: 'tnum';
     min-width: 40px;
@@ -266,11 +266,11 @@
     height: 8px;
     -webkit-appearance: none;
     appearance: none;
-    background: #e5e0d8;
+    background: var(--color-muted);
     border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     outline: none;
     cursor: pointer;
-    border: 2px solid #2d2d2d;
+    border: 2px solid var(--color-pencil);
 }
 
 .seek-slider::-webkit-slider-thumb {
@@ -278,27 +278,27 @@
     appearance: none;
     width: 24px;
     height: 24px;
-    background: #ff4d4d;
-    border: 3px solid #2d2d2d;
+    background: var(--color-accent);
+    border: 3px solid var(--color-pencil);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     cursor: pointer;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
     transition: all 0.1s ease;
 }
 
 .seek-slider::-webkit-slider-thumb:hover {
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
     transform: translate(1px, 1px);
 }
 
 .seek-slider::-moz-range-thumb {
     width: 24px;
     height: 24px;
-    background: #ff4d4d;
-    border: 3px solid #2d2d2d;
+    background: var(--color-accent);
+    border: 3px solid var(--color-pencil);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     cursor: pointer;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
 }
 
 /* Main Controls */
@@ -312,22 +312,22 @@
 .speed-button {
     width: 56px;
     height: 36px;
-    border: 2px solid #2d2d2d;
-    background: #FFF;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
     border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     font-family: 'Patrick Hand', cursive;
     font-size: 14px;
     font-weight: 600;
-    color: #2d2d2d;
+    color: var(--color-pencil);
     cursor: pointer;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
     transition: all 0.1s ease;
 }
 
 .speed-button:hover {
-    background: #2d5da1;
+    background: var(--color-blue-pen);
     color: white;
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
     transform: translate(1px, 1px);
 }
 
@@ -338,22 +338,22 @@
 .skip-button {
     width: 52px;
     height: 52px;
-    border: 2px solid #2d2d2d;
-    background: #FFF;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #2d2d2d;
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    color: var(--color-pencil);
+    box-shadow: var(--shadow-hand-sm);
     transition: all 0.1s ease;
 }
 
 .skip-button:hover {
-    background: #e5e0d8;
-    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    background: var(--color-muted);
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
     transform: translate(1px, 1px);
 }
 
@@ -373,24 +373,24 @@
 .play-pause-button {
     width: 80px;
     height: 80px;
-    border: 4px solid #2d2d2d;
-    background: #ff4d4d;
+    border: 4px solid var(--color-pencil);
+    background: var(--color-accent);
     border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 6px 6px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-lg);
     transition: all 0.1s ease;
 }
 
 .play-pause-button:hover {
-    box-shadow: 4px 4px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand);
     transform: translate(2px, 2px) rotate(-2deg);
 }
 
 .play-pause-button:active {
-    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    box-shadow: var(--shadow-hand-sm);
     transform: translate(4px, 4px);
 }
 

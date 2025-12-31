@@ -1,0 +1,403 @@
+/**
+ * LandingPage Styles - Hand-Drawn Design System
+ * 
+ * Consistent with the app's playful, hand-drawn aesthetic
+ */
+
+.landing-page {
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
+    background-size: 24px 24px;
+    overflow-x: hidden;
+}
+
+/* Hero Section */
+.landing-hero {
+    position: relative;
+    padding: 60px 24px 80px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-card);
+    border: 2px solid var(--color-pencil);
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
+    padding: 8px 16px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-hand-subtle);
+    animation: bounceIn 0.6s ease-out;
+}
+
+.badge-icon {
+    font-size: 18px;
+}
+
+.badge-text {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-pencil);
+    letter-spacing: 0.5px;
+}
+
+.hero-title {
+    font-family: 'Kalam', cursive;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--color-pencil);
+    margin: 0 0 16px 0;
+    transform: rotate(-1deg);
+    animation: bounceIn 0.6s ease-out 0.1s backwards;
+}
+
+.hero-tagline {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 20px;
+    color: var(--color-pencil);
+    opacity: 0.85;
+    line-height: 1.5;
+    margin: 0 0 32px 0;
+    animation: bounceIn 0.6s ease-out 0.2s backwards;
+}
+
+.hero-tagline strong {
+    color: var(--color-accent);
+    font-weight: inherit;
+}
+
+.hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 22px;
+    font-weight: 600;
+    background: var(--color-accent);
+    color: white;
+    border: 3px solid var(--color-pencil);
+    border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
+    padding: 16px 32px;
+    cursor: pointer;
+    box-shadow: var(--shadow-hand);
+    transition: all 0.15s ease;
+    animation: bounceIn 0.6s ease-out 0.3s backwards;
+}
+
+.hero-cta:hover {
+    box-shadow: var(--shadow-hand-sm);
+    transform: translate(2px, 2px) rotate(-2deg);
+}
+
+.hero-cta:active {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+}
+
+.cta-arrow {
+    font-size: 24px;
+    transition: transform 0.2s ease;
+}
+
+.hero-cta:hover .cta-arrow {
+    transform: translateX(4px);
+}
+
+/* Floating Notes Animation */
+.hero-illustration {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.floating-note {
+    position: absolute;
+    font-size: 32px;
+    opacity: 0.3;
+    animation: float 6s ease-in-out infinite;
+}
+
+.note-1 {
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.note-2 {
+    top: 25%;
+    right: 12%;
+    animation-delay: 2s;
+}
+
+.note-3 {
+    bottom: 20%;
+    left: 15%;
+    animation-delay: 4s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-20px) rotate(10deg);
+    }
+}
+
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    60% {
+        transform: scale(1.02) translateY(-5px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Sections */
+.landing-section {
+    padding: 48px 24px;
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.section-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-family: 'Kalam', cursive;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--color-pencil);
+    margin: 0 0 16px 0;
+    transform: rotate(-0.5deg);
+}
+
+.section-description {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px;
+    color: var(--color-pencil);
+    opacity: 0.8;
+    line-height: 1.6;
+    margin: 0 0 24px 0;
+}
+
+.section-description strong {
+    color: var(--color-blue-pen);
+    font-weight: inherit;
+}
+
+/* Privacy Section */
+.privacy-section {
+    background: rgba(var(--color-pencil-rgb), 0.03);
+    border-top: 2px dashed var(--color-muted);
+    border-bottom: 2px dashed var(--color-muted);
+}
+
+.privacy-badges {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.privacy-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--color-card);
+    border: 2px solid var(--color-pencil);
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+    padding: 8px 14px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: var(--color-pencil);
+    box-shadow: var(--shadow-hand-subtle);
+}
+
+.privacy-badge-icon {
+    font-size: 16px;
+}
+
+/* AI Section */
+.tech-stack {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.tech-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-card);
+    border: 2px solid var(--color-pencil);
+    border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
+    padding: 16px 24px;
+    box-shadow: var(--shadow-hand-subtle);
+    transition: transform 0.2s ease;
+}
+
+.tech-item:hover {
+    transform: rotate(-2deg) scale(1.05);
+}
+
+.tech-icon {
+    font-size: 28px;
+}
+
+.tech-name {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: var(--color-pencil);
+    font-weight: 600;
+}
+
+/* Features Section */
+.features-section {
+    padding-top: 56px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.feature-card {
+    background: var(--color-card);
+    border: 2px solid var(--color-pencil);
+    border-radius: var(--radius-wobbly-md);
+    padding: 20px 16px;
+    box-shadow: var(--shadow-hand-subtle);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: rotate(-1deg) translateY(-4px);
+    box-shadow: var(--shadow-hand-sm);
+}
+
+.feature-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.feature-title {
+    font-family: 'Kalam', cursive;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-pencil);
+    margin: 0 0 8px 0;
+}
+
+.feature-description {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: var(--color-pencil);
+    opacity: 0.7;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* CTA Section */
+.cta-section {
+    padding: 56px 24px;
+    background: rgba(var(--color-pencil-rgb), 0.03);
+    border-top: 2px dashed var(--color-muted);
+}
+
+.cta-title {
+    font-family: 'Kalam', cursive;
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-pencil);
+    margin: 0 0 12px 0;
+    transform: rotate(-1deg);
+}
+
+.cta-description {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px;
+    color: var(--color-pencil);
+    opacity: 0.7;
+    margin: 0 0 24px 0;
+}
+
+/* Footer */
+.landing-footer {
+    padding: 32px 24px;
+    text-align: center;
+    border-top: 2px dashed var(--color-muted);
+}
+
+.footer-text {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 16px;
+    color: var(--color-pencil);
+    opacity: 0.6;
+    margin: 0 0 8px 0;
+}
+
+.footer-domain {
+    font-family: 'Kalam', cursive;
+    font-size: 14px;
+    color: var(--color-blue-pen);
+    margin: 0;
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+    .hero-title {
+        font-size: 36px;
+    }
+
+    .hero-tagline {
+        font-size: 18px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .privacy-badges {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .tech-stack {
+        flex-direction: column;
+        align-items: center;
+    }
+}

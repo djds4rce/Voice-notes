@@ -14,18 +14,43 @@
   --radius-wobbly-button: 30px 60px 40px 70px / 60px 30px 70px 40px;
   --radius-wobbly-circle: 60px 50px 55px 45px / 50px 60px 45px 55px;
 
-  /* Colors for CSS usage */
+  /* Light Mode Colors (default) */
   --color-paper: #fdfbf7;
+  --color-paper-rgb: 253, 251, 247;
   --color-pencil: #2d2d2d;
+  --color-pencil-rgb: 45, 45, 45;
   --color-muted: #e5e0d8;
+  --color-card: #ffffff;
   --color-accent: #ff4d4d;
   --color-blue-pen: #2d5da1;
+  --color-dot-pattern: #e5e0d8;
+  --color-tag-bg: #fff9c4;
 
   /* Shadows */
-  --shadow-hand: 4px 4px 0px 0px #2d2d2d;
-  --shadow-hand-lg: 8px 8px 0px 0px #2d2d2d;
-  --shadow-hand-sm: 2px 2px 0px 0px #2d2d2d;
-  --shadow-hand-subtle: 3px 3px 0px 0px rgba(45, 45, 45, 0.1);
+  --shadow-hand: 4px 4px 0px 0px var(--color-pencil);
+  --shadow-hand-lg: 8px 8px 0px 0px var(--color-pencil);
+  --shadow-hand-sm: 2px 2px 0px 0px var(--color-pencil);
+  --shadow-hand-subtle: 3px 3px 0px 0px rgba(var(--color-pencil-rgb), 0.1);
+}
+
+/* Dark Mode Colors */
+[data-theme="dark"] {
+  --color-paper: #1a1a1a;
+  --color-paper-rgb: 26, 26, 26;
+  --color-pencil: #e8e4dc;
+  --color-pencil-rgb: 232, 228, 220;
+  --color-muted: #3a3a3a;
+  --color-card: #252525;
+  --color-accent: #ff6b6b;
+  --color-blue-pen: #5b8fd4;
+  --color-dot-pattern: #2a2a2a;
+  --color-tag-bg: #5d4e37;
+
+  /* Shadows for dark mode */
+  --shadow-hand: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+  --shadow-hand-lg: 8px 8px 0px 0px rgba(0, 0, 0, 0.5);
+  --shadow-hand-sm: 2px 2px 0px 0px rgba(0, 0, 0, 0.5);
+  --shadow-hand-subtle: 3px 3px 0px 0px rgba(0, 0, 0, 0.2);
 }
 
 /* Paper Texture Background */
