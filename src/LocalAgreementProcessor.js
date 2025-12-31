@@ -105,8 +105,7 @@ export class LocalAgreementProcessor {
                         if (committedTail.toLowerCase() === newHead.toLowerCase()) {
                             // Remove duplicate words from the beginning of new
                             // Python: for j in range(i): words.append(repr(self.new.pop(0)))
-                            const removed = this.new.splice(0, i);
-                            console.log(`[LocalAgreement] N-gram match (${i} words): removed "${removed.map(w => w.text).join(" ")}"`);
+                            this.new.splice(0, i);
                             break;
                         }
                     }
@@ -114,7 +113,6 @@ export class LocalAgreementProcessor {
             }
         }
 
-        console.log(`[LocalAgreement] After insert: ${this.new.length} new words, lastCommittedTime=${this.lastCommittedTime.toFixed(2)}s`);
     }
 
     /**
@@ -159,9 +157,6 @@ export class LocalAgreementProcessor {
         this.committedInBuffer.push(...commit);
         this.allCommitted.push(...commit);
 
-        if (commit.length > 0) {
-            console.log(`[LocalAgreement] Committed ${commit.length} words: "${commit.map(w => w.text).join(" ")}" (until ${this.lastCommittedTime.toFixed(2)}s)`);
-        }
 
         return commit;
     }
@@ -211,7 +206,6 @@ export class LocalAgreementProcessor {
     finalize() {
         // Commit all words in buffer (tentative) since we won't get more confirmations
         if (this.buffer.length > 0) {
-            console.log(`[LocalAgreement] Finalizing: committing ${this.buffer.length} remaining buffer words`);
             for (const word of this.buffer) {
                 this.allCommitted.push(word);
                 this.lastCommittedTime = word.end;
@@ -223,7 +217,6 @@ export class LocalAgreementProcessor {
 
         // Also commit any words in 'new' buffer
         if (this.new.length > 0) {
-            console.log(`[LocalAgreement] Finalizing: committing ${this.new.length} remaining new words`);
             for (const word of this.new) {
                 this.allCommitted.push(word);
                 this.lastCommittedTime = word.end;

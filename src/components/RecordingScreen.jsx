@@ -514,6 +514,36 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
 
     // Loading state - waiting for model
     if (waitingForModel && whisperStatus !== 'ready') {
+        // Error state
+        if (whisperStatus === 'error') {
+            return (
+                <div className="recording-screen loading-model">
+                    <div className="model-loading-container">
+                        <div className="model-loading-icon error">
+                            <svg className="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                        </div>
+                        <h2 className="model-loading-title error">
+                            Failed to load transcription model
+                        </h2>
+                        <p className="model-loading-subtitle">
+                            {loadingMessage || 'An error occurred while loading the AI model.'}
+                        </p>
+                        <p className="model-loading-hint">
+                            This may happen on some mobile browsers. Try refreshing the page or using a different browser.
+                        </p>
+                        <button className="cancel-button model-cancel" onClick={() => navigate('/')}>
+                            Go Back
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // Loading state
         return (
             <div className="recording-screen loading-model">
                 <div className="model-loading-container">

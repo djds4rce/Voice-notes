@@ -514,3 +514,29 @@
 .model-cancel {
   margin-top: 16px;
 }
+
+/* Error state */
+.model-loading-icon.error {
+  border-color: var(--color-accent);
+  animation: none;
+}
+
+.error-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--color-accent);
+}
+
+.model-loading-title.error {
+  color: var(--color-accent);
+}
+
+.model-loading-hint {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  color: var(--color-pencil);
+  opacity: 0.5;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+  font-style: italic;
+}

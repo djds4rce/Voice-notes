@@ -45,7 +45,6 @@ export class TopicGenerator {
 
         // If device changed, reset instance
         if (TopicGenerator.instance && TopicGenerator.currentDevice !== targetDevice) {
-            console.log(`[TopicGenerator] Device changed from ${TopicGenerator.currentDevice} to ${targetDevice}, resetting...`);
             TopicGenerator.instance = null;
         }
 
@@ -70,7 +69,6 @@ export class TopicGenerator {
         const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
         this.device = device;
 
-        console.log(`[TopicGenerator] Loading model: ${this.modelId} with device: ${device}`, config);
 
         this.generator = await pipeline("text-generation", this.modelId, {
             dtype: config.dtype,
@@ -78,7 +76,6 @@ export class TopicGenerator {
             progress_callback: progressCallback,
         });
         this.ready = true;
-        console.log(`[TopicGenerator] Model loaded successfully on ${device}`);
     }
 
     async generateTags(transcript) {
@@ -114,7 +111,6 @@ export class TopicGenerator {
             // If chat input is used, pipeline might return struct.
             // For text-generation pipeline with chat inputs (array), it uses apply_chat_template internally usually.
 
-            console.log("[TopicGenerator] Raw model output:", JSON.stringify(output));
 
             let generatedText = "";
             if (Array.isArray(output) && output.length > 0) {
@@ -135,7 +131,6 @@ export class TopicGenerator {
                 }
             }
 
-            console.log("[TopicGenerator] Extracted text:", generatedText);
 
             // 3. Parse Tags
             // Handle various formats:

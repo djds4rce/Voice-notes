@@ -39,7 +39,6 @@ class EmbeddingService {
 
         // If device changed, reset instance
         if (this.instance && this.currentDevice !== targetDevice) {
-            console.log(`[EmbeddingService] Device changed from ${this.currentDevice} to ${targetDevice}, resetting...`);
             this.instance = null;
         }
 
@@ -58,7 +57,6 @@ class EmbeddingService {
 
         // If device changed, need to reload
         if (this.embedder && this.device !== device) {
-            console.log(`[EmbeddingService] Device changed, reloading model...`);
             this.embedder = null;
         }
 
@@ -72,7 +70,6 @@ class EmbeddingService {
 
         // Get device-specific configuration
         const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
-        console.log(`[EmbeddingService] Loading embedding model with device: ${device}`, config);
 
         this.loadPromise = pipeline('feature-extraction', EmbeddingService.MODEL_ID, {
             dtype: config.dtype,
@@ -81,7 +78,6 @@ class EmbeddingService {
         }).then(embedder => {
             this.embedder = embedder;
             this.loading = false;
-            console.log(`[EmbeddingService] Model loaded successfully on ${device}`);
             return this.embedder;
         }).catch(error => {
             this.loading = false;
@@ -134,7 +130,6 @@ class EmbeddingService {
         // Convert to Float32Array
         const embedding = new Float32Array(output.data);
 
-        console.log(`[EmbeddingService] Generated ${embedding.length}D embedding for "${cleanText.slice(0, 50)}..."`);
         return embedding;
     }
 

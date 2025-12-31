@@ -79,7 +79,6 @@ export function AudioPlayerV2({ note, onClose }) {
                 gainNodeRef.current = gainNode;
 
                 // Decode the entire audio blob into an AudioBuffer
-                console.log('[AudioPlayerV2] Decoding audio blob...');
                 const arrayBuffer = await note.audioBlob.arrayBuffer();
 
                 // Check again after async operation
@@ -100,7 +99,6 @@ export function AudioPlayerV2({ note, onClose }) {
                     return;
                 }
 
-                console.log('[AudioPlayerV2] Audio decoded, duration:', audioBuffer.duration);
                 audioBufferRef.current = audioBuffer;
 
                 // Set duration from decoded buffer (most accurate)

@@ -52,7 +52,6 @@ class DatabaseService {
       `);
 
             this.initialized = true;
-            console.log('[DatabaseService] Initialized with PGlite');
         } catch (error) {
             console.error('[DatabaseService] Initialization failed:', error);
             throw error;
@@ -94,7 +93,6 @@ class DatabaseService {
         const params = [title, transcript, audioBase64, mimeType, durationSeconds, timestampsJson, tagsJson, localTimestamp];
 
         const result = await this.db.query(query, params);
-        console.log('[DatabaseService] Created note:', result.rows[0]);
         return result.rows[0];
     }
 
@@ -169,7 +167,6 @@ class DatabaseService {
      */
     async deleteNote(id) {
         await this.db.query('DELETE FROM voice_notes WHERE id = $1', [id]);
-        console.log('[DatabaseService] Deleted note:', id);
     }
 
     /**

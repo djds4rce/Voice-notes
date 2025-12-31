@@ -14,51 +14,71 @@ import { TopicGenerator } from "./TopicGenerator.js";
 
 let transcriber = null;
 let currentModelId = null;
+let currentDevice = null; // Track current device
 let pendingModelId = null; // Track model being loaded
 const agreementProcessor = new LocalAgreementProcessor();
 let isProcessing = false;
 let isLoading = false;
 
+// Track failed load attempts to prevent infinite loops
+let loadAttempts = 0;
+const MAX_LOAD_ATTEMPTS = 2; // Try WebGPU once, then WASM once
+
 // ===== MESSAGE HANDLERS =====
 
 async function handleLoad({ modelId = null, taggingEnabled = true, device = "webgpu" } = {}) {
   const targetModel = modelId || 'Xenova/whisper-base';
+  let targetDevice = device;
 
-  console.log(`[Worker] handleLoad called, target: ${targetModel}, taggingEnabled: ${taggingEnabled}, device: ${device}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
-
-  // If already loaded with same model, just send ready
-  if (transcriber && currentModelId === targetModel && !isLoading) {
-    console.log(`[Worker] Model ${targetModel} already loaded, sending ready`);
+  // If already loaded with same model and device, just send ready
+  if (transcriber && currentModelId === targetModel && currentDevice === targetDevice && !isLoading) {
     self.postMessage({ status: "ready" });
     return;
   }
 
   // If currently loading a DIFFERENT model, we need to restart
   if (isLoading && pendingModelId !== targetModel) {
-    console.log(`[Worker] Switching from loading ${pendingModelId} to ${targetModel}`);
     // Reset everything and restart
     transcriber = null;
     currentModelId = null;
+    currentDevice = null;
     isLoading = false;
+    loadAttempts = 0;
   }
 
   // If already loading the SAME model, just wait
   if (isLoading && pendingModelId === targetModel) {
-    console.log(`[Worker] Already loading ${targetModel}, waiting...`);
     return;
+  }
+
+  // Check if we've exceeded max attempts
+  if (loadAttempts >= MAX_LOAD_ATTEMPTS) {
+    self.postMessage({
+      status: "error",
+      error: "Failed to load model after multiple attempts. Please refresh the page and try again."
+    });
+    return;
+  }
+
+  // If this is a retry and we were using WebGPU, fall back to WASM
+  if (loadAttempts > 0 && targetDevice === "webgpu") {
+    targetDevice = "wasm";
+    self.postMessage({ status: "loading", data: "WebGPU failed, falling back to CPU mode..." });
   }
 
   isLoading = true;
   pendingModelId = targetModel;
+  loadAttempts++;
 
   try {
     self.postMessage({ status: "loading", data: "Loading model..." });
 
     transcriber = await WhisperTranscriber.getInstance((progress) => {
       self.postMessage(progress);
-    }, targetModel, device);
+    }, targetModel, targetDevice);
 
     currentModelId = targetModel;
+    currentDevice = targetDevice;
 
     self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
 
@@ -81,13 +101,13 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = "web
           });
           self.postMessage(progress);
         }
-      }, device);
+      }, targetDevice);
     } else {
-      console.log("[Worker] Tagging disabled, skipping topic model loading");
     }
 
     isLoading = false;
     pendingModelId = null;
+    loadAttempts = 0; // Reset on success
     self.postMessage({ status: "ready" });
   } catch (error) {
     console.error("Model loading error:", error);
@@ -95,6 +115,21 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = "web
     pendingModelId = null;
     transcriber = null;
     currentModelId = null;
+    currentDevice = null;
+
+    // Post error status and attempt automatic retry with fallback
+    if (loadAttempts < MAX_LOAD_ATTEMPTS) {
+      // Retry with WASM fallback
+      setTimeout(() => {
+        handleLoad({ modelId, taggingEnabled, device: "wasm" });
+      }, 500);
+    } else {
+      // All attempts exhausted
+      self.postMessage({
+        status: "error",
+        error: `Failed to load model: ${error.message || "Unknown error"}. Try refreshing the page.`
+      });
+    }
   }
 }
 
@@ -161,15 +196,12 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
 let pendingFinalize = null;
 
 async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEnabled = true }) {
-  console.log("[Worker] Finalize requested, isProcessing:", isProcessing, "taggingEnabled:", taggingEnabled);
 
   // If currently processing, wait for it to complete
   if (isProcessing) {
-    console.log("[Worker] Waiting for current processing to complete...");
     await new Promise((resolve) => {
       pendingFinalize = resolve;
     });
-    console.log("[Worker] Current processing completed");
   }
 
   isProcessing = true;
@@ -178,14 +210,12 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
   try {
     // If we have audio, process it first
     if (audio && audio.length >= 8000) { // At least 0.5 seconds
-      console.log("[Worker] Processing final audio...");
       const { text, chunks, tps } = await transcriber.transcribe(audio, language);
       agreementProcessor.process(chunks, audioWindowStart);
     }
 
     // Finalize: commit all remaining tentative text
     const result = agreementProcessor.finalize();
-    console.log("[Worker] Finalized transcript:", result.committed.substring(0, 100) + "...");
 
     self.postMessage({
       status: "update",
@@ -203,22 +233,18 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
       try {
         const finalText = result.committed;
         if (finalText && finalText.length > 50) {
-          console.log("[Worker] Generating topics...");
           // Ensure generator is ready or load it
           const topicGen = await TopicGenerator.getInstance((progress) => {
             if (progress.status === "progress") {
-              console.log(`[Worker] Loading Topic Model: ${progress.file} ${progress.progress}%`);
             }
           });
 
           tags = await topicGen.generateTags(finalText);
-          console.log("[Worker] Generated Tags:", tags);
         }
       } catch (tagError) {
         console.error("[Worker] Topic generation failed:", tagError);
       }
     } else {
-      console.log("[Worker] Tagging disabled, skipping topic generation");
     }
     // ------------------------
 

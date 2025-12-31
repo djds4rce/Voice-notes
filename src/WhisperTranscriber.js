@@ -47,7 +47,6 @@ export class WhisperTranscriber {
 
         // If model or device changed, reset instance
         if (this.instance && (this.currentModelId !== targetModel || this.currentDevice !== targetDevice)) {
-            console.log(`[WhisperTranscriber] Config changed (model: ${this.currentModelId} -> ${targetModel}, device: ${this.currentDevice} -> ${targetDevice}), resetting...`);
             this.instance = null;
             this.transcriber = null;
         }
@@ -58,7 +57,6 @@ export class WhisperTranscriber {
 
         // Get device-specific configuration
         const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
-        console.log(`[WhisperTranscriber] Loading model: ${targetModel} with device: ${targetDevice}`, config);
 
         // Use pipeline API for automatic speech recognition with word-level timestamps support
         const transcriber = await pipeline(
@@ -179,7 +177,6 @@ export class WhisperTranscriber {
         }
 
         const tps = chunks.length / duration;
-        console.log(`[Whisper] Transcribed ${chunks.length} words in ${duration.toFixed(2)}s (${hasWordTimestamps ? 'word' : 'segment'} timestamps)`);
 
         return { text, chunks, tps };
     }

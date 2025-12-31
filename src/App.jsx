@@ -35,7 +35,6 @@ const forceWasm = localStorage.getItem('force-wasm') === 'true';
 // Determine device: respect override, otherwise detect capability
 const DEVICE = (IS_WEBGPU_AVAILABLE && !forceWasm) ? "webgpu" : "wasm";
 
-console.log(`[App] Device: ${DEVICE} (WebGPU available: ${IS_WEBGPU_AVAILABLE}, forced WASM: ${forceWasm})`);
 
 function AppContent() {
   const navigate = useNavigate();
@@ -132,7 +131,6 @@ function AppContent() {
         // Load initial notes
         const allNotes = await dbInstance.getAllNotes();
         setNotes(allNotes);
-        console.log('[App] Database initialized, loaded', allNotes.length, 'notes');
       } catch (error) {
         console.error('[App] Failed to initialize database:', error);
       } finally {
@@ -181,6 +179,11 @@ function AppContent() {
         case 'ready':
           setStatus('ready');
           break;
+
+        case 'error':
+          setStatus('error');
+          setLoadingMessage(e.data.error || 'Failed to load model');
+          break;
       }
     };
 
@@ -195,7 +198,6 @@ function AppContent() {
   const loadModel = useCallback((modelId, options = {}) => {
     const { forceReload = false } = options;
     const shouldLoadTags = isEnglish && taggingEnabled;
-    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload, 'taggingEnabled:', shouldLoadTags, 'device:', DEVICE);
     worker.current?.postMessage({
       type: 'load',
       data: {
@@ -221,10 +223,8 @@ function AppContent() {
   const previousModelRef = useRef(whisperModel);
   useEffect(() => {
     if (previousModelRef.current !== whisperModel && hasTriggeredLoad.current) {
-      console.log('[App] Model change detected, will reload in 5 seconds:', whisperModel);
 
       const timer = setTimeout(() => {
-        console.log('[App] Loading new model:', whisperModel);
         previousModelRef.current = whisperModel;
         const shouldLoadTags = isEnglish && taggingEnabled;
         worker.current?.postMessage({
@@ -239,7 +239,6 @@ function AppContent() {
       }, 5000);
 
       return () => {
-        console.log('[App] Model change debounce cancelled');
         clearTimeout(timer);
       };
     }
@@ -262,7 +261,6 @@ function AppContent() {
       const allNotes = await db.getAllNotes();
       setNotes(allNotes);
 
-      console.log('[App] Saved note:', note.id);
     } catch (error) {
       console.error('[App] Failed to save note:', error);
     }
@@ -275,7 +273,6 @@ function AppContent() {
     try {
       await db.deleteNote(noteId);
       setNotes(prev => prev.filter(n => n.id !== noteId));
-      console.log('[App] Deleted note:', noteId);
     } catch (error) {
       console.error('[App] Failed to delete note:', error);
     }
@@ -317,7 +314,6 @@ function AppContent() {
 
     try {
       setIsSearching(true);
-      console.log('[App] Starting semantic search for:', query);
 
       // Get embedding service and embed the query
       // Show loading status if model isn't loaded yet
@@ -335,7 +331,6 @@ function AppContent() {
             // Generate embedding for note transcript
             const noteEmbedding = await embeddingService.embed(note.transcript);
             const similarity = EmbeddingService.cosineSimilarity(queryEmbedding, noteEmbedding);
-            console.log(`[App] Note "${note.title}" similarity: ${similarity.toFixed(4)}`);
             return { ...note, similarity };
           } catch (error) {
             console.error('[App] Failed to embed note:', note.id, error);
@@ -352,8 +347,6 @@ function AppContent() {
         .filter(note => note.similarity >= SIMILARITY_THRESHOLD)
         .sort((a, b) => b.similarity - a.similarity);
 
-      console.log('[App] Semantic search found', results.length, 'results (threshold:', SIMILARITY_THRESHOLD, ')');
-      console.log('[App] Top scores:', resultsWithScores.slice(0, 5).map(n => `${n.title}: ${n.similarity.toFixed(3)}`));
       setIsSearching(false);
       return results;
     } catch (error) {
