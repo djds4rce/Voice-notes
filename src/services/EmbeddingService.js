@@ -8,25 +8,59 @@
 
 import { pipeline } from '@huggingface/transformers';
 
+/**
+ * Device-specific configuration for Embedding model
+ * - WebGPU: Use fp32 for best quality with GPU acceleration
+ * - WASM: Use q8 quantization for CPU efficiency
+ */
+const PER_DEVICE_CONFIG = {
+    webgpu: {
+        dtype: "fp32", // or "fp16" if model supports it
+        device: "webgpu",
+    },
+    wasm: {
+        dtype: "q8",
+        device: "wasm",
+    },
+};
+
 class EmbeddingService {
     static instance = null;
+    static currentDevice = null;
     embedder = null;
     loading = false;
     loadPromise = null;
+    device = null;
 
     static MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 
-    static async getInstance(progressCallback = null) {
+    static async getInstance(progressCallback = null, device = "webgpu") {
+        const targetDevice = device || "webgpu";
+
+        // If device changed, reset instance
+        if (this.instance && this.currentDevice !== targetDevice) {
+            console.log(`[EmbeddingService] Device changed from ${this.currentDevice} to ${targetDevice}, resetting...`);
+            this.instance = null;
+        }
+
         if (!this.instance) {
             this.instance = new EmbeddingService();
         }
-        // Ensure model is loaded
-        await this.instance.load(progressCallback);
+        // Ensure model is loaded with the correct device
+        await this.instance.load(progressCallback, targetDevice);
+        this.currentDevice = targetDevice;
         return this.instance;
     }
 
-    async load(progressCallback = null) {
-        if (this.embedder) return;
+    async load(progressCallback = null, device = "webgpu") {
+        // If already loaded with same device, return
+        if (this.embedder && this.device === device) return;
+
+        // If device changed, need to reload
+        if (this.embedder && this.device !== device) {
+            console.log(`[EmbeddingService] Device changed, reloading model...`);
+            this.embedder = null;
+        }
 
         if (this.loading) {
             // Wait for existing load to complete
@@ -34,14 +68,20 @@ class EmbeddingService {
         }
 
         this.loading = true;
-        console.log('[EmbeddingService] Loading embedding model...');
+        this.device = device;
+
+        // Get device-specific configuration
+        const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
+        console.log(`[EmbeddingService] Loading embedding model with device: ${device}`, config);
 
         this.loadPromise = pipeline('feature-extraction', EmbeddingService.MODEL_ID, {
+            dtype: config.dtype,
+            device: config.device,
             progress_callback: progressCallback,
         }).then(embedder => {
             this.embedder = embedder;
             this.loading = false;
-            console.log('[EmbeddingService] Model loaded successfully');
+            console.log(`[EmbeddingService] Model loaded successfully on ${device}`);
             return this.embedder;
         }).catch(error => {
             this.loading = false;

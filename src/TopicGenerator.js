@@ -12,6 +12,22 @@ const MODEL_ID = "HuggingFaceTB/SmolLM2-360M-Instruct";
 // Fallback if the specific quantization isn't found, or use specific revision if needed.
 // For now trusting standard transformers.js convention for popular models.
 
+/**
+ * Device-specific configuration for TopicGenerator model
+ * - WebGPU: Use q4 quantization with GPU acceleration
+ * - WASM: Use q4 quantization for CPU (could use q8 if available for better quality)
+ */
+const PER_DEVICE_CONFIG = {
+    webgpu: {
+        dtype: "q4",
+        device: "webgpu",
+    },
+    wasm: {
+        dtype: "q4", // q4 is widely available; q8 could be used if model supports it
+        device: "wasm",
+    },
+};
+
 // Helper for Title Case
 function toTitleCase(str) {
     return str.replace(
@@ -22,11 +38,21 @@ function toTitleCase(str) {
 
 export class TopicGenerator {
     static instance = null;
+    static currentDevice = null;
 
-    static async getInstance(progressCallback = null) {
+    static async getInstance(progressCallback = null, device = "webgpu") {
+        const targetDevice = device || "webgpu";
+
+        // If device changed, reset instance
+        if (TopicGenerator.instance && TopicGenerator.currentDevice !== targetDevice) {
+            console.log(`[TopicGenerator] Device changed from ${TopicGenerator.currentDevice} to ${targetDevice}, resetting...`);
+            TopicGenerator.instance = null;
+        }
+
         if (!TopicGenerator.instance) {
             TopicGenerator.instance = new TopicGenerator();
-            await TopicGenerator.instance.init(progressCallback);
+            await TopicGenerator.instance.init(progressCallback, targetDevice);
+            TopicGenerator.currentDevice = targetDevice;
         }
         return TopicGenerator.instance;
     }
@@ -35,31 +61,24 @@ export class TopicGenerator {
         this.generator = null;
         this.tokenizer = null;
         this.modelId = MODEL_ID;
+        this.device = null;
         this.ready = false;
     }
 
-    async init(progressCallback) {
-        try {
-            this.generator = await pipeline("text-generation", this.modelId, {
-                dtype: "q4", // Use 4-bit quantization for 'it' models usually available optimization
-                device: "webgpu", // Prefer WebGPU if available, fallback automatically often handled or explicit
-                progress_callback: progressCallback,
-            });
-            this.ready = true;
-        } catch (error) {
-            console.error("Failed to load topic generation model:", error);
-            // Fallback to cpu if webgpu fails? Transformers.js pipeline usually handles device selection or defaults to wasm
-            if (error.message.includes("WebGPU")) {
-                console.log("Retrying with default device (WASM)...");
-                this.generator = await pipeline("text-generation", this.modelId, {
-                    dtype: "q4",
-                    progress_callback: progressCallback,
-                });
-                this.ready = true;
-            } else {
-                throw error;
-            }
-        }
+    async init(progressCallback, device = "webgpu") {
+        // Get device-specific configuration (proactive, no fallback needed)
+        const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
+        this.device = device;
+
+        console.log(`[TopicGenerator] Loading model: ${this.modelId} with device: ${device}`, config);
+
+        this.generator = await pipeline("text-generation", this.modelId, {
+            dtype: config.dtype,
+            device: config.device,
+            progress_callback: progressCallback,
+        });
+        this.ready = true;
+        console.log(`[TopicGenerator] Model loaded successfully on ${device}`);
     }
 
     async generateTags(transcript) {

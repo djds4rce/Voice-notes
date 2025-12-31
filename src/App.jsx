@@ -29,6 +29,14 @@ import './App.css';
 
 const IS_WEBGPU_AVAILABLE = !!navigator.gpu;
 
+// Check for localStorage override to force WASM mode (for testing)
+const forceWasm = localStorage.getItem('force-wasm') === 'true';
+
+// Determine device: respect override, otherwise detect capability
+const DEVICE = (IS_WEBGPU_AVAILABLE && !forceWasm) ? "webgpu" : "wasm";
+
+console.log(`[App] Device: ${DEVICE} (WebGPU available: ${IS_WEBGPU_AVAILABLE}, forced WASM: ${forceWasm})`);
+
 function AppContent() {
   const navigate = useNavigate();
 
@@ -187,21 +195,23 @@ function AppContent() {
   const loadModel = useCallback((modelId, options = {}) => {
     const { forceReload = false } = options;
     const shouldLoadTags = isEnglish && taggingEnabled;
-    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload, 'taggingEnabled:', shouldLoadTags);
+    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload, 'taggingEnabled:', shouldLoadTags, 'device:', DEVICE);
     worker.current?.postMessage({
       type: 'load',
       data: {
         modelId: modelId || whisperModel,
-        taggingEnabled: shouldLoadTags
+        taggingEnabled: shouldLoadTags,
+        device: DEVICE
       }
     });
     setStatus('loading');
   }, [whisperModel, isEnglish, taggingEnabled]);
 
   // Auto-load model on mount (only once)
+  // No longer gated on WebGPU - will use WASM fallback if needed
   const hasTriggeredLoad = useRef(false);
   useEffect(() => {
-    if (IS_WEBGPU_AVAILABLE && !hasTriggeredLoad.current) {
+    if (!hasTriggeredLoad.current) {
       hasTriggeredLoad.current = true;
       loadModel();
     }
@@ -221,7 +231,8 @@ function AppContent() {
           type: 'load',
           data: {
             modelId: whisperModel,
-            taggingEnabled: shouldLoadTags
+            taggingEnabled: shouldLoadTags,
+            device: DEVICE
           }
         });
         setStatus('loading');
@@ -313,7 +324,7 @@ function AppContent() {
       if (embeddingStatus !== 'ready') {
         setEmbeddingStatus('loading');
       }
-      const embeddingService = await EmbeddingService.getInstance();
+      const embeddingService = await EmbeddingService.getInstance(null, DEVICE);
       setEmbeddingStatus('ready');
       const queryEmbedding = await embeddingService.embed(query);
 
@@ -361,16 +372,7 @@ function AppContent() {
     }
   }, [getNoteWithAudio, navigate]);
 
-  // Check if WebGPU is available - show error if not
-  if (!IS_WEBGPU_AVAILABLE) {
-    return (
-      <div className="app-container center">
-        <div className="error-message">
-          WebGPU is not supported by this browser. Please use a compatible browser like Chrome or Edge.
-        </div>
-      </div>
-    );
-  }
+  // WebGPU block removed - app now works with WASM fallback
 
   // Main app routes
   return (

@@ -1,6 +1,25 @@
 import { pipeline } from "@huggingface/transformers";
 
 /**
+ * Device-specific configuration for Whisper model
+ * - WebGPU: Use high precision encoder with quantized decoder for GPU acceleration
+ * - WASM: Use fully quantized model for CPU efficiency
+ */
+const PER_DEVICE_CONFIG = {
+    webgpu: {
+        dtype: {
+            encoder_model: "fp32",
+            decoder_model_merged: "q4",
+        },
+        device: "webgpu",
+    },
+    wasm: {
+        dtype: "q8",
+        device: "wasm",
+    },
+};
+
+/**
  * WhisperTranscriber
  * 
  * Handles loading and running the Whisper model for speech-to-text.
@@ -15,18 +34,20 @@ export class WhisperTranscriber {
 
     static instance = null;
     static currentModelId = null;
+    static currentDevice = null;
     static transcriber = null;
 
     constructor(transcriber) {
         this.transcriber = transcriber;
     }
 
-    static async getInstance(progressCallback = null, modelId = null) {
+    static async getInstance(progressCallback = null, modelId = null, device = "webgpu") {
         const targetModel = modelId || this.DEFAULT_MODEL_ID;
+        const targetDevice = device || "webgpu";
 
-        // If model changed, reset instance
-        if (this.instance && this.currentModelId !== targetModel) {
-            console.log(`[WhisperTranscriber] Model changed from ${this.currentModelId} to ${targetModel}, resetting...`);
+        // If model or device changed, reset instance
+        if (this.instance && (this.currentModelId !== targetModel || this.currentDevice !== targetDevice)) {
+            console.log(`[WhisperTranscriber] Config changed (model: ${this.currentModelId} -> ${targetModel}, device: ${this.currentDevice} -> ${targetDevice}), resetting...`);
             this.instance = null;
             this.transcriber = null;
         }
@@ -35,23 +56,23 @@ export class WhisperTranscriber {
             return this.instance;
         }
 
-        console.log(`[WhisperTranscriber] Loading model: ${targetModel}`);
+        // Get device-specific configuration
+        const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
+        console.log(`[WhisperTranscriber] Loading model: ${targetModel} with device: ${targetDevice}`, config);
 
         // Use pipeline API for automatic speech recognition with word-level timestamps support
         const transcriber = await pipeline(
             "automatic-speech-recognition",
             targetModel,
             {
-                dtype: {
-                    encoder_model: "fp32",
-                    decoder_model_merged: "q4",
-                },
-                device: "webgpu",
+                dtype: config.dtype,
+                device: config.device,
                 progress_callback: progressCallback,
             }
         );
 
         this.currentModelId = targetModel;
+        this.currentDevice = targetDevice;
         this.instance = new WhisperTranscriber(transcriber);
         return this.instance;
     }

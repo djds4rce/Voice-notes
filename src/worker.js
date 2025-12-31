@@ -21,10 +21,10 @@ let isLoading = false;
 
 // ===== MESSAGE HANDLERS =====
 
-async function handleLoad({ modelId = null, taggingEnabled = true } = {}) {
+async function handleLoad({ modelId = null, taggingEnabled = true, device = "webgpu" } = {}) {
   const targetModel = modelId || 'Xenova/whisper-base';
 
-  console.log(`[Worker] handleLoad called, target: ${targetModel}, taggingEnabled: ${taggingEnabled}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
+  console.log(`[Worker] handleLoad called, target: ${targetModel}, taggingEnabled: ${taggingEnabled}, device: ${device}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
 
   // If already loaded with same model, just send ready
   if (transcriber && currentModelId === targetModel && !isLoading) {
@@ -56,7 +56,7 @@ async function handleLoad({ modelId = null, taggingEnabled = true } = {}) {
 
     transcriber = await WhisperTranscriber.getInstance((progress) => {
       self.postMessage(progress);
-    }, targetModel);
+    }, targetModel, device);
 
     currentModelId = targetModel;
 
@@ -83,7 +83,7 @@ async function handleLoad({ modelId = null, taggingEnabled = true } = {}) {
           });
           self.postMessage(progress);
         }
-      });
+      }, device);
     } else {
       console.log("[Worker] Tagging disabled, skipping topic model loading");
     }
