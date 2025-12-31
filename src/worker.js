@@ -64,8 +64,6 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = "web
 
     await transcriber.warmup();
 
-    await transcriber.warmup();
-
     if (taggingEnabled) {
       self.postMessage({ status: "loading", data: "Loading topic model..." });
       await TopicGenerator.getInstance((progress) => {

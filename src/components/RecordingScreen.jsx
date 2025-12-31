@@ -482,18 +482,23 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
     }, [worker, navigate]);
 
     // Start recording on mount (only if model is ready)
+    const hasStartedRecording = useRef(false);
     useEffect(() => {
-        if (whisperStatus === 'ready' && waitingForModel) {
+        // Guard against duplicate calls
+        if (hasStartedRecording.current) {
+            return;
+        }
+
+        if (whisperStatus === 'ready') {
+            hasStartedRecording.current = true;
             setWaitingForModel(false);
             startRecording();
-        } else if (whisperStatus === 'ready' && !waitingForModel && !recording) {
-            startRecording();
         }
-    }, [whisperStatus, waitingForModel]);
+    }, [whisperStatus, startRecording]);
 
     // If still waiting for model, allow cancel
     useEffect(() => {
-        if (whisperStatus !== 'ready') {
+        if (whisperStatus !== 'ready' && !hasStartedRecording.current) {
             setWaitingForModel(true);
         }
     }, [whisperStatus]);
