@@ -67,6 +67,48 @@
     stroke-width: 2.5;
 }
 
+/* Header Actions Container */
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Settings Button */
+.settings-button {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #2d2d2d;
+    background: #FFF;
+    border-radius: 55px 60px 50px 55px / 60px 50px 55px 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 3px 3px 0px 0px #2d2d2d;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.15s ease,
+        background-color 0.15s ease;
+    flex-shrink: 0;
+}
+
+.settings-button:hover {
+    background: #ff4d4d;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px) rotate(15deg) scale(1.08);
+}
+
+.settings-button:hover svg {
+    color: white;
+}
+
+.settings-button svg {
+    width: 20px;
+    height: 20px;
+    color: #2d2d2d;
+    stroke-width: 2.5;
+}
+
 /* Inline Search Input */
 .search-input-container {
     flex: 1;

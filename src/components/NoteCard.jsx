@@ -170,7 +170,7 @@ export function NoteCard({ note, onClick, onPlay, onDelete, showMatchInfo = fals
 
                 <div className="note-card-footer">
                     <span className="note-card-timestamp">
-                        <span className="timestamp-icon">🕐</span>
+
                         {formatTimestamp(note.created_at)}
                     </span>
 

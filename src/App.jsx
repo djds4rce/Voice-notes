@@ -16,6 +16,7 @@ import { NotesListPage } from './components/NotesListPage';
 import { RecordingScreen } from './components/RecordingScreen';
 import { AudioPlayerV2 as AudioPlayer } from './components/AudioPlayerV2';
 import { SearchPage } from './components/SearchPage';
+import { SettingsPage } from './components/SettingsPage';
 import Progress from './components/Progress';
 
 // Services
@@ -49,6 +50,52 @@ function AppContent() {
 
   // Embedding model loading state for search
   const [embeddingStatus, setEmbeddingStatus] = useState(null);
+
+  // Language setting (persisted to localStorage)
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem('whisper-language');
+    return saved || 'en';
+  });
+
+  // Persist language changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('whisper-language', language);
+  }, [language]);
+
+  // Whisper model setting (persisted to localStorage)
+  const [whisperModel, setWhisperModel] = useState(() => {
+    const saved = localStorage.getItem('whisper-model');
+    return saved || 'Xenova/whisper-base';
+  });
+
+  // Persist model changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('whisper-model', whisperModel);
+  }, [whisperModel]);
+
+  // Semantic search setting (only available for English)
+  const [semanticSearchEnabled, setSemanticSearchEnabled] = useState(() => {
+    const saved = localStorage.getItem('semantic-search-enabled');
+    return saved !== null ? saved === 'true' : true; // Default enabled
+  });
+
+  // Tagging setting (only available for English)
+  const [taggingEnabled, setTaggingEnabled] = useState(() => {
+    const saved = localStorage.getItem('tagging-enabled');
+    return saved !== null ? saved === 'true' : true; // Default enabled
+  });
+
+  // Persist feature settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('semantic-search-enabled', semanticSearchEnabled);
+  }, [semanticSearchEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('tagging-enabled', taggingEnabled);
+  }, [taggingEnabled]);
+
+  // Auto-disable features when language is not English
+  const isEnglish = language === 'en';
 
   // Initialize database
   useEffect(() => {
@@ -120,11 +167,12 @@ function AppContent() {
   }, []);
 
   // Load Whisper model
-  const loadModel = useCallback(() => {
-    if (status !== null) return; // Already loading or loaded
-    worker.current?.postMessage({ type: 'load' });
+  const loadModel = useCallback((modelId, options = {}) => {
+    const { forceReload = false } = options;
+    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload);
+    worker.current?.postMessage({ type: 'load', data: { modelId: modelId || whisperModel } });
     setStatus('loading');
-  }, [status]);
+  }, [whisperModel]);
 
   // Auto-load model on mount (only once)
   const hasTriggeredLoad = useRef(false);
@@ -134,6 +182,26 @@ function AppContent() {
       loadModel();
     }
   }, []);
+
+  // Auto-reload model when whisperModel setting changes (debounced by 5 seconds)
+  const previousModelRef = useRef(whisperModel);
+  useEffect(() => {
+    if (previousModelRef.current !== whisperModel && hasTriggeredLoad.current) {
+      console.log('[App] Model change detected, will reload in 5 seconds:', whisperModel);
+
+      const timer = setTimeout(() => {
+        console.log('[App] Loading new model:', whisperModel);
+        previousModelRef.current = whisperModel;
+        worker.current?.postMessage({ type: 'load', data: { modelId: whisperModel } });
+        setStatus('loading');
+      }, 5000);
+
+      return () => {
+        console.log('[App] Model change debounce cancelled');
+        clearTimeout(timer);
+      };
+    }
+  }, [whisperModel]);
 
   // Save a new note
   const handleSaveNote = useCallback(async ({ transcript, audioBlob, durationSeconds, wordTimestamps, tags }) => {
@@ -285,6 +353,8 @@ function AppContent() {
               onDeleteNote={handleDeleteNote}
               onPlayNote={handlePlayNote}
               onSemanticSearch={handleSemanticSearch}
+              onKeywordSearch={handleKeywordSearch}
+              semanticSearchEnabled={isEnglish && semanticSearchEnabled}
               isSearching={isSearching}
               isEmbeddingLoading={embeddingStatus === 'loading'}
               isLoading={isDbLoading}
@@ -300,6 +370,24 @@ function AppContent() {
               whisperStatus={status}
               progressItems={progressItems}
               loadingMessage={loadingMessage}
+              language={language}
+              taggingEnabled={isEnglish && taggingEnabled}
+            />
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <SettingsPage
+              language={language}
+              setLanguage={setLanguage}
+              whisperModel={whisperModel}
+              setWhisperModel={setWhisperModel}
+              semanticSearchEnabled={semanticSearchEnabled}
+              setSemanticSearchEnabled={setSemanticSearchEnabled}
+              taggingEnabled={taggingEnabled}
+              setTaggingEnabled={setTaggingEnabled}
+              isEnglish={isEnglish}
             />
           }
         />

@@ -20,7 +20,7 @@ const MAX_SAMPLES = WHISPER_SAMPLING_RATE * MAX_AUDIO_LENGTH;
 const WINDOW_SHIFT = 20; // seconds
 const WINDOW_SHIFT_SAMPLES = WHISPER_SAMPLING_RATE * WINDOW_SHIFT;
 
-export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressItems = [], loadingMessage = '' }) {
+export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressItems = [], loadingMessage = '', language = 'en', taggingEnabled = true }) {
     const navigate = useNavigate();
 
     // Track if we're waiting for model to load
@@ -201,7 +201,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 lastProcessedSamples.current = allAudio.length;
                 worker?.postMessage({
                     type: 'generate',
-                    data: { audio: audioToProcess, language: 'en', audioWindowStart },
+                    data: { audio: audioToProcess, language, audioWindowStart },
                 });
             } else {
                 setTimeout(() => {
@@ -414,7 +414,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 // process the audio, and commit all remaining tentative text
                 worker?.postMessage({
                     type: 'finalize',
-                    data: { audio: audioToProcess, language: 'en', audioWindowStart },
+                    data: { audio: audioToProcess, language, audioWindowStart, taggingEnabled },
                 });
 
                 // Wait for finalization to complete
@@ -572,7 +572,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     <span className="recording-dot"></span>
                     LISTENING...
                 </div>
-                <button className="settings-button">⚙</button>
+                <div className="header-spacer"></div>
             </div>
 
             {/* Timer */}

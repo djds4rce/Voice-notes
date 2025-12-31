@@ -20,6 +20,8 @@ export function NotesListPage({
     onDeleteNote,
     onPlayNote,
     onSemanticSearch,
+    onKeywordSearch,
+    semanticSearchEnabled = true,
     isSearching,
     isEmbeddingLoading = false,
     isLoading = false
@@ -34,7 +36,7 @@ export function NotesListPage({
     // Track search version to cancel stale results
     const searchVersionRef = useRef(0);
 
-    // Debounced semantic search with pending state
+    // Debounced search (semantic or keyword based on setting)
     useEffect(() => {
         if (!query.trim()) {
             setSearchResults([]);
@@ -47,12 +49,15 @@ export function NotesListPage({
         setSearchPending(true);
         const currentVersion = ++searchVersionRef.current;
 
-        // Use 500ms debounce for semantic search (heavier computation)
+        // Use semantic search if enabled, otherwise keyword search
+        const searchFn = semanticSearchEnabled ? onSemanticSearch : onKeywordSearch;
+        const debounceMs = semanticSearchEnabled ? 500 : 300; // Faster debounce for keyword search
+
         const timer = setTimeout(async () => {
             setHasSearched(true);
-            if (onSemanticSearch) {
+            if (searchFn) {
                 try {
-                    const results = await onSemanticSearch(query);
+                    const results = await searchFn(query);
                     // Only update if this is still the latest search
                     if (searchVersionRef.current === currentVersion) {
                         setSearchResults(results);
@@ -66,12 +71,12 @@ export function NotesListPage({
                     }
                 }
             }
-        }, 500);
+        }, debounceMs);
 
         return () => {
             clearTimeout(timer);
         };
-    }, [query, onSemanticSearch]);
+    }, [query, onSemanticSearch, onKeywordSearch, semanticSearchEnabled]);
 
     // Highlight search terms in text and return snippet around first match
     const highlightText = useCallback((text, searchQuery) => {
@@ -195,16 +200,28 @@ export function NotesListPage({
                 {!searchOpen ? (
                     <>
                         <h1 className="notes-title">Voice Notes</h1>
-                        <button
-                            className="search-button"
-                            onClick={() => setSearchOpen(true)}
-                            aria-label="Search notes"
-                        >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="11" cy="11" r="8" />
-                                <path d="M21 21l-4.35-4.35" />
-                            </svg>
-                        </button>
+                        <div className="header-actions">
+                            <button
+                                className="search-button"
+                                onClick={() => setSearchOpen(true)}
+                                aria-label="Search notes"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="M21 21l-4.35-4.35" />
+                                </svg>
+                            </button>
+                            <button
+                                className="settings-button"
+                                onClick={() => navigate('/settings')}
+                                aria-label="Settings"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <circle cx="12" cy="12" r="3" />
+                                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                                </svg>
+                            </button>
+                        </div>
                     </>
                 ) : (
                     <div className="search-input-container">
@@ -352,14 +369,12 @@ export function NotesListPage({
                         </>
                     ) : hasSearched ? (
                         <div className="no-results">
-                            <div className="no-results-icon">🔍</div>
                             <h2>No results found</h2>
                             <p>Try different keywords or check your spelling</p>
                         </div>
                     ) : null
                 ) : !isLoading && !(isSearching || searchPending) && !hasNotes ? (
                     <div className="empty-state">
-                        <div className="empty-icon">🎙️</div>
                         <h2>No voice notes yet</h2>
                         <p>Tap the button below to record your first note</p>
                     </div>

@@ -13,29 +13,52 @@ import { TopicGenerator } from "./TopicGenerator.js";
 // ===== INSTANCES =====
 
 let transcriber = null;
+let currentModelId = null;
+let pendingModelId = null; // Track model being loaded
 const agreementProcessor = new LocalAgreementProcessor();
 let isProcessing = false;
 let isLoading = false;
 
 // ===== MESSAGE HANDLERS =====
 
-async function handleLoad() {
-  // Prevent concurrent loads or reloading
-  if (isLoading || transcriber) {
-    if (transcriber) {
-      self.postMessage({ status: "ready" });
-    }
+async function handleLoad(modelId = null) {
+  const targetModel = modelId || 'Xenova/whisper-base';
+
+  console.log(`[Worker] handleLoad called, target: ${targetModel}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
+
+  // If already loaded with same model, just send ready
+  if (transcriber && currentModelId === targetModel && !isLoading) {
+    console.log(`[Worker] Model ${targetModel} already loaded, sending ready`);
+    self.postMessage({ status: "ready" });
+    return;
+  }
+
+  // If currently loading a DIFFERENT model, we need to restart
+  if (isLoading && pendingModelId !== targetModel) {
+    console.log(`[Worker] Switching from loading ${pendingModelId} to ${targetModel}`);
+    // Reset everything and restart
+    transcriber = null;
+    currentModelId = null;
+    isLoading = false;
+  }
+
+  // If already loading the SAME model, just wait
+  if (isLoading && pendingModelId === targetModel) {
+    console.log(`[Worker] Already loading ${targetModel}, waiting...`);
     return;
   }
 
   isLoading = true;
+  pendingModelId = targetModel;
 
   try {
     self.postMessage({ status: "loading", data: "Loading model..." });
 
     transcriber = await WhisperTranscriber.getInstance((progress) => {
       self.postMessage(progress);
-    });
+    }, targetModel);
+
+    currentModelId = targetModel;
 
     self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
 
@@ -61,11 +84,15 @@ async function handleLoad() {
       }
     });
 
+    isLoading = false;
+    pendingModelId = null;
     self.postMessage({ status: "ready" });
   } catch (error) {
     console.error("Model loading error:", error);
     isLoading = false;
+    pendingModelId = null;
     transcriber = null;
+    currentModelId = null;
   }
 }
 
@@ -131,8 +158,8 @@ async function handleGenerate({ audio, language, audioWindowStart = 0 }) {
 // Queue to track pending finalize request
 let pendingFinalize = null;
 
-async function handleFinalize({ audio, language, audioWindowStart = 0 }) {
-  console.log("[Worker] Finalize requested, isProcessing:", isProcessing);
+async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEnabled = true }) {
+  console.log("[Worker] Finalize requested, isProcessing:", isProcessing, "taggingEnabled:", taggingEnabled);
 
   // If currently processing, wait for it to complete
   if (isProcessing) {
@@ -168,24 +195,28 @@ async function handleFinalize({ audio, language, audioWindowStart = 0 }) {
       numTokens: 0,
     });
 
-    // --- TOPIC GENERATION ---
+    // --- TOPIC GENERATION (only if enabled) ---
     let tags = [];
-    try {
-      const finalText = result.committed;
-      if (finalText && finalText.length > 50) {
-        console.log("[Worker] Generating topics...");
-        // Ensure generator is ready or load it
-        const topicGen = await TopicGenerator.getInstance((progress) => {
-          if (progress.status === "progress") {
-            console.log(`[Worker] Loading Topic Model: ${progress.file} ${progress.progress}%`);
-          }
-        });
+    if (taggingEnabled) {
+      try {
+        const finalText = result.committed;
+        if (finalText && finalText.length > 50) {
+          console.log("[Worker] Generating topics...");
+          // Ensure generator is ready or load it
+          const topicGen = await TopicGenerator.getInstance((progress) => {
+            if (progress.status === "progress") {
+              console.log(`[Worker] Loading Topic Model: ${progress.file} ${progress.progress}%`);
+            }
+          });
 
-        tags = await topicGen.generateTags(finalText);
-        console.log("[Worker] Generated Tags:", tags);
+          tags = await topicGen.generateTags(finalText);
+          console.log("[Worker] Generated Tags:", tags);
+        }
+      } catch (tagError) {
+        console.error("[Worker] Topic generation failed:", tagError);
       }
-    } catch (tagError) {
-      console.error("[Worker] Topic generation failed:", tagError);
+    } else {
+      console.log("[Worker] Tagging disabled, skipping topic generation");
     }
     // ------------------------
 
@@ -234,7 +265,7 @@ self.addEventListener("message", async (e) => {
 
   switch (type) {
     case "load":
-      await handleLoad();
+      await handleLoad(data?.modelId);
       break;
 
     case "generate":

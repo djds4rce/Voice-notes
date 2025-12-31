@@ -10,25 +10,37 @@ import { pipeline } from "@huggingface/transformers";
  * Reference: https://huggingface.co/docs/transformers.js/api/pipelines#automaticspeechrecognitionpipeline
  */
 export class WhisperTranscriber {
-    // Xenova models have output_attentions enabled for word-level timestamps
-    static MODEL_ID = "Xenova/whisper-base";
+    // Default model - can be overridden via getInstance()
+    static DEFAULT_MODEL_ID = "Xenova/whisper-base";
 
     static instance = null;
+    static currentModelId = null;
     static transcriber = null;
 
     constructor(transcriber) {
         this.transcriber = transcriber;
     }
 
-    static async getInstance(progressCallback = null) {
+    static async getInstance(progressCallback = null, modelId = null) {
+        const targetModel = modelId || this.DEFAULT_MODEL_ID;
+
+        // If model changed, reset instance
+        if (this.instance && this.currentModelId !== targetModel) {
+            console.log(`[WhisperTranscriber] Model changed from ${this.currentModelId} to ${targetModel}, resetting...`);
+            this.instance = null;
+            this.transcriber = null;
+        }
+
         if (this.instance) {
             return this.instance;
         }
 
+        console.log(`[WhisperTranscriber] Loading model: ${targetModel}`);
+
         // Use pipeline API for automatic speech recognition with word-level timestamps support
         const transcriber = await pipeline(
             "automatic-speech-recognition",
-            this.MODEL_ID,
+            targetModel,
             {
                 dtype: {
                     encoder_model: "fp32",
@@ -39,6 +51,7 @@ export class WhisperTranscriber {
             }
         );
 
+        this.currentModelId = targetModel;
         this.instance = new WhisperTranscriber(transcriber);
         return this.instance;
     }
