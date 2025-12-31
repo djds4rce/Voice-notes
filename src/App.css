@@ -1,10 +1,12 @@
 /**
- * App Styles
+ * App Styles - Hand-Drawn Design System
  * 
- * Design system based on mockups:
- * - Coral/red accent: #E74C3C
- * - Cream background: #FAF8F5
- * - Modern typography
+ * Design tokens:
+ * - Paper background: #fdfbf7
+ * - Pencil text: #2d2d2d
+ * - Red accent: #ff4d4d
+ * - Blue pen: #2d5da1
+ * - Handwritten fonts: Kalam (headings), Patrick Hand (body)
  */
 
 /* Reset & Base */
@@ -23,10 +25,12 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
+  font-family: 'Patrick Hand', cursive;
+  background-color: #fdfbf7;
+  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-size: 24px 24px;
   min-height: 100vh;
-  color: #333;
+  color: #2d2d2d;
 }
 
 /* App Container */
@@ -34,7 +38,9 @@ body {
   min-height: 100vh;
   max-width: 500px;
   margin: 0 auto;
-  background: linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
+  background-color: #fdfbf7;
+  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .app-container.center {
@@ -56,6 +62,11 @@ body {
   width: 120px;
   height: 120px;
   margin-bottom: 24px;
+  border: 3px solid #2d2d2d;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+  padding: 16px;
+  background: white;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
 }
 
 .app-logo {
@@ -65,54 +76,65 @@ body {
 }
 
 .app-title {
-  font-size: 32px;
+  font-family: 'Kalam', cursive;
+  font-size: 36px;
   font-weight: 700;
-  color: #333;
+  color: #2d2d2d;
   margin: 0 0 8px 0;
 }
 
 .app-subtitle {
-  font-size: 16px;
-  color: #666;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 18px;
+  color: #2d2d2d;
+  opacity: 0.7;
   margin: 0 0 32px 0;
 }
 
 .load-description {
   max-width: 300px;
-  font-size: 14px;
-  color: #999;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 16px;
+  color: #2d2d2d;
+  opacity: 0.6;
   line-height: 1.6;
   margin-bottom: 32px;
 }
 
 .load-button {
-  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
-  color: white;
-  border: none;
-  border-radius: 30px;
+  font-family: 'Patrick Hand', cursive;
+  background: white;
+  color: #2d2d2d;
+  border: 3px solid #2d2d2d;
+  border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
   padding: 16px 48px;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  transition: all 0.1s ease;
 }
 
 .load-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(231, 76, 60, 0.4);
+  background: #ff4d4d;
+  color: white;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
 }
 
 .load-button:active {
-  transform: translateY(0);
+  box-shadow: none;
+  transform: translate(4px, 4px);
 }
 
 .error-message {
-  background: rgba(231, 76, 60, 0.1);
-  color: #E74C3C;
+  font-family: 'Patrick Hand', cursive;
+  background: rgba(255, 77, 77, 0.1);
+  color: #ff4d4d;
   padding: 16px 24px;
-  border-radius: 12px;
-  font-size: 14px;
+  border: 2px dashed #ff4d4d;
+  border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
+  font-size: 16px;
 }
 
 /* Loading Screen */
@@ -126,9 +148,10 @@ body {
 }
 
 .loading-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-family: 'Kalam', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d2d2d;
   margin-bottom: 24px;
   text-align: center;
 }
@@ -180,18 +203,18 @@ body {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
+  background: #e5e0d8;
+  border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: #2d2d2d;
 }
 
 /* Focus styles */
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #E74C3C;
+  outline: 3px solid #2d5da1;
   outline-offset: 2px;
 }
 

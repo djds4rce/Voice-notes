@@ -1,10 +1,12 @@
 /**
- * AudioPlayer Styles
+ * AudioPlayer Styles - Hand-Drawn Design System
  */
 
 .audio-player-page {
     min-height: 100vh;
-    background: linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
+    background-color: #fdfbf7;
+    background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+    background-size: 24px 24px;
     display: flex;
     flex-direction: column;
 }
@@ -18,26 +20,37 @@
 }
 
 .back-button {
-    width: 44px;
-    height: 44px;
-    border: none;
-    background: transparent;
+    width: 48px;
+    height: 48px;
+    border: 2px solid #2d2d2d;
+    background: #FFF;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
+}
+
+.back-button:hover {
+    background: #e5e0d8;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .back-button svg {
     width: 24px;
     height: 24px;
-    color: #333;
+    color: #2d2d2d;
+    stroke-width: 2.5;
 }
 
 .player-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333;
+    font-family: 'Kalam', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d2d2d;
     margin: 0;
     white-space: nowrap;
     overflow: hidden;
@@ -52,7 +65,6 @@
     justify-content: center;
     padding: 0 12px;
     min-width: 0;
-    /* allows text truncation */
     overflow: hidden;
 }
 
@@ -66,8 +78,10 @@
 }
 
 .player-date {
-    font-size: 12px;
-    color: #999;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: #2d2d2d;
+    opacity: 0.6;
 }
 
 .player-tags {
@@ -80,38 +94,46 @@
 }
 
 .player-tag {
-    font-size: 11px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px;
     font-weight: 500;
-    color: #7209B7;
-    background: rgba(114, 9, 183, 0.08);
-    /* light purple bg */
-    padding: 2px 6px;
-    border-radius: 4px;
+    color: #2d5da1;
+    background: rgba(45, 93, 161, 0.1);
+    padding: 2px 8px;
+    border: 1px dashed #2d5da1;
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     white-space: nowrap;
 }
 
 .transcript-toggle {
-    width: 44px;
-    height: 44px;
-    border: none;
+    width: 48px;
+    height: 48px;
+    border: 2px solid #2d2d2d;
     background: #FFF;
-    border-radius: 12px;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    transition: all 0.2s;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
+}
+
+.transcript-toggle:hover {
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .transcript-toggle.active {
-    background: #E74C3C;
+    background: #ff4d4d;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
 }
 
 .transcript-toggle svg {
     width: 20px;
     height: 20px;
-    color: #666;
+    color: #2d2d2d;
+    stroke-width: 2.5;
 }
 
 .transcript-toggle.active svg {
@@ -128,23 +150,30 @@
 }
 
 .player-loading {
+    font-family: 'Patrick Hand', cursive;
     padding: 40px;
     text-align: center;
-    color: #999;
+    color: #2d2d2d;
+    opacity: 0.6;
 }
 
 /* Transcript View */
 .transcript-view {
     max-width: 500px;
-    max-height: 60vh;
+    max-height: 45vh;
     overflow-y: auto;
     padding: 20px;
+    background: white;
+    border: 2px solid #2d2d2d;
+    border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
+    box-shadow: 4px 4px 0px 0px rgba(45, 45, 45, 0.1);
 }
 
 .full-transcript {
-    font-size: 18px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 20px;
     line-height: 1.8;
-    color: #333;
+    color: #2d2d2d;
     margin: 0;
 }
 
@@ -156,25 +185,28 @@
 .transcript-word {
     cursor: pointer;
     padding: 2px 0;
-    border-radius: 3px;
+    border-radius: 4px;
     transition: all 0.15s ease;
-    color: #999;
+    color: #2d2d2d;
+    opacity: 0.5;
 }
 
 .transcript-word:hover {
-    background: rgba(231, 76, 60, 0.1);
+    background: rgba(255, 77, 77, 0.15);
 }
 
 .transcript-word.past {
-    color: #666;
+    opacity: 0.8;
 }
 
 .transcript-word.active {
-    color: #E74C3C;
-    font-weight: 600;
-    background: rgba(231, 76, 60, 0.15);
-    padding: 2px 4px;
-    margin: 0 -4px;
+    color: #ff4d4d;
+    font-weight: 700;
+    opacity: 1;
+    background: rgba(255, 77, 77, 0.2);
+    padding: 2px 6px;
+    margin: 0 -6px;
+    border-radius: 4px;
 }
 
 /* Waveform View */
@@ -187,14 +219,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 4px;
     height: 120px;
 }
 
 .waveform-placeholder .waveform-bar {
-    width: 4px;
-    background: linear-gradient(180deg, #E74C3C 0%, #FADBD8 100%);
-    border-radius: 2px;
+    width: 6px;
+    background: linear-gradient(180deg, #ff4d4d 0%, #e5e0d8 100%);
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     transition: opacity 0.2s;
 }
 
@@ -213,8 +245,10 @@
 }
 
 .time {
-    font-size: 12px;
-    color: #999;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: #2d2d2d;
+    opacity: 0.6;
     font-feature-settings: 'tnum';
     min-width: 40px;
 }
@@ -229,34 +263,42 @@
 
 .seek-slider {
     flex: 1;
-    height: 4px;
+    height: 8px;
     -webkit-appearance: none;
     appearance: none;
-    background: linear-gradient(to right, #E74C3C 0%, #E74C3C var(--progress, 0%), #E5E5E5 var(--progress, 0%), #E5E5E5 100%);
-    border-radius: 2px;
+    background: #e5e0d8;
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     outline: none;
     cursor: pointer;
+    border: 2px solid #2d2d2d;
 }
 
 .seek-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
-    background: #E74C3C;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    background: #ff4d4d;
+    border: 3px solid #2d2d2d;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
+}
+
+.seek-slider::-webkit-slider-thumb:hover {
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .seek-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: #E74C3C;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    background: #ff4d4d;
+    border: 3px solid #2d2d2d;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
 }
 
 /* Main Controls */
@@ -268,21 +310,25 @@
 }
 
 .speed-button {
-    width: 48px;
-    height: 32px;
-    border: 1px solid #E5E5E5;
+    width: 56px;
+    height: 36px;
+    border: 2px solid #2d2d2d;
     background: #FFF;
-    border-radius: 16px;
-    font-size: 12px;
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
     font-weight: 600;
-    color: #666;
+    color: #2d2d2d;
     cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
 }
 
 .speed-button:hover {
-    border-color: #E74C3C;
-    color: #E74C3C;
+    background: #2d5da1;
+    color: white;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .speed-button.invisible {
@@ -290,61 +336,70 @@
 }
 
 .skip-button {
-    width: 48px;
-    height: 48px;
-    border: none;
-    background: transparent;
+    width: 52px;
+    height: 52px;
+    border: 2px solid #2d2d2d;
+    background: #FFF;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    color: #666;
-}
-
-.skip-button svg {
-    width: 28px;
-    height: 28px;
-}
-
-.skip-button span {
-    font-size: 10px;
-    font-weight: 600;
-    margin-top: -4px;
+    color: #2d2d2d;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
 }
 
 .skip-button:hover {
-    color: #E74C3C;
+    background: #e5e0d8;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
+}
+
+.skip-button svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
+}
+
+.skip-button span {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: -2px;
 }
 
 .play-pause-button {
-    width: 72px;
-    height: 72px;
-    border: none;
-    background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
-    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    border: 4px solid #2d2d2d;
+    background: #ff4d4d;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
-    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 6px 6px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
 }
 
 .play-pause-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 24px rgba(231, 76, 60, 0.4);
+    box-shadow: 4px 4px 0px 0px #2d2d2d;
+    transform: translate(2px, 2px) rotate(-2deg);
 }
 
 .play-pause-button:active {
-    transform: scale(0.95);
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transform: translate(4px, 4px);
 }
 
 .play-pause-button svg {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     color: white;
     margin-left: 4px;
+    stroke-width: 2.5;
 }
 
 .play-pause-button svg:first-child {

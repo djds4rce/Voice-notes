@@ -349,12 +349,6 @@ export function NotesListPage({
                                     </div>
                                 </section>
                             )}
-
-                            {/* End of list */}
-                            <div className="end-of-list">
-                                <div className="end-icon">😊</div>
-                                <p>{hasSearched ? 'End of search results.' : 'End of your scribbles.'}</p>
-                            </div>
                         </>
                     ) : hasSearched ? (
                         <div className="no-results">

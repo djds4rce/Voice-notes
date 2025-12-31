@@ -2,21 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==============================================
+   HAND-DRAWN DESIGN SYSTEM - Base Styles
+   ============================================== */
+
+/* CSS Custom Properties for Wobbly Borders */
+:root {
+  --radius-wobbly: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --radius-wobbly-md: 15px 255px 15px 225px / 225px 15px 255px 15px;
+  --radius-wobbly-sm: 185px 25px 205px 25px / 25px 205px 25px 185px;
+  --radius-wobbly-button: 30px 60px 40px 70px / 60px 30px 70px 40px;
+  --radius-wobbly-circle: 60px 50px 55px 45px / 50px 60px 45px 55px;
+
+  /* Colors for CSS usage */
+  --color-paper: #fdfbf7;
+  --color-pencil: #2d2d2d;
+  --color-muted: #e5e0d8;
+  --color-accent: #ff4d4d;
+  --color-blue-pen: #2d5da1;
+
+  /* Shadows */
+  --shadow-hand: 4px 4px 0px 0px #2d2d2d;
+  --shadow-hand-lg: 8px 8px 0px 0px #2d2d2d;
+  --shadow-hand-sm: 2px 2px 0px 0px #2d2d2d;
+  --shadow-hand-subtle: 3px 3px 0px 0px rgba(45, 45, 45, 0.1);
+}
+
+/* Paper Texture Background */
 @layer utilities {
+  .paper-texture {
+    background-color: var(--color-paper);
+    background-image: radial-gradient(var(--color-muted) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* Scrollbar Styling */
   .scrollbar-thin::-webkit-scrollbar {
-    @apply w-2;
+    width: 6px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    @apply rounded-full bg-gray-100 dark:bg-gray-700;
+    background: transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-gray-300 dark:bg-gray-600;
+    background: var(--color-muted);
+    border-radius: var(--radius-wobbly-sm);
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+    background: var(--color-pencil);
   }
 
   .animation-delay-200 {
@@ -31,6 +66,120 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* ==============================================
+   Component Classes - Hand-Drawn Style
+   ============================================== */
+
+@layer components {
+
+  /* Wobbly Button */
+  .wobbly-button {
+    font-family: 'Patrick Hand', cursive;
+    background: white;
+    border: 3px solid var(--color-pencil);
+    border-radius: var(--radius-wobbly-button);
+    box-shadow: var(--shadow-hand);
+    cursor: pointer;
+    transition: all 0.1s ease;
+    position: relative;
+  }
+
+  .wobbly-button:hover {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: var(--shadow-hand-sm);
+    transform: translate(2px, 2px);
+  }
+
+  .wobbly-button:active {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+  }
+
+  /* Secondary Button Variant */
+  .wobbly-button-secondary {
+    font-family: 'Patrick Hand', cursive;
+    background: var(--color-muted);
+    border: 3px solid var(--color-pencil);
+    border-radius: var(--radius-wobbly-button);
+    box-shadow: var(--shadow-hand);
+    cursor: pointer;
+    transition: all 0.1s ease;
+  }
+
+  .wobbly-button-secondary:hover {
+    background: var(--color-blue-pen);
+    color: white;
+    box-shadow: var(--shadow-hand-sm);
+    transform: translate(2px, 2px);
+  }
+
+  /* Wobbly Card */
+  .wobbly-card {
+    background: white;
+    border: 2px solid var(--color-pencil);
+    border-radius: var(--radius-wobbly-md);
+    box-shadow: var(--shadow-hand-subtle);
+    transition: transform 0.1s ease;
+  }
+
+  .wobbly-card:hover {
+    transform: rotate(-0.5deg);
+  }
+
+  /* Wobbly Input */
+  .wobbly-input {
+    font-family: 'Patrick Hand', cursive;
+    background: white;
+    border: 2px solid var(--color-pencil);
+    border-radius: var(--radius-wobbly-sm);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .wobbly-input:focus {
+    border-color: var(--color-blue-pen);
+    box-shadow: 0 0 0 3px rgba(45, 93, 161, 0.15);
+  }
+
+  .wobbly-input::placeholder {
+    color: rgba(45, 45, 45, 0.4);
+  }
+
+  /* Tape Decoration (pseudo-element) */
+  .tape-decoration::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    width: 60px;
+    height: 20px;
+    background: rgba(200, 200, 200, 0.6);
+    border-radius: 2px;
+    z-index: 1;
+  }
+
+  /* Tack Decoration */
+  .tack-decoration::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 12px;
+    background: var(--color-accent);
+    border-radius: var(--radius-wobbly-circle);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+}
+
+/* ==============================================
+   Animations
+   ============================================== */
 
 /* Smooth word fade-in animation */
 @keyframes wordFadeIn {
@@ -64,4 +213,131 @@
 
 .tentative-pulse {
   animation: tentativePulse 1.5s ease-in-out infinite;
+}
+
+/* Bounce animation for decorative elements */
+@keyframes bounceSlow {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.bounce-slow {
+  animation: bounceSlow 3s ease-in-out infinite;
+}
+
+/* Jiggle animation for hover effects */
+@keyframes jiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-1deg);
+  }
+
+  75% {
+    transform: rotate(1deg);
+  }
+}
+
+.jiggle-hover:hover {
+  animation: jiggle 0.3s ease-in-out;
+}
+
+/* Pencil writing animation */
+@keyframes pencilWrite {
+
+  0%,
+  100% {
+    transform: rotate(-10deg);
+  }
+
+  50% {
+    transform: rotate(10deg);
+  }
+}
+
+/* Wiggle animation - playful hover effect */
+@keyframes wiggle {
+
+  0%,
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+
+  20% {
+    transform: rotate(-2deg) scale(1.02);
+  }
+
+  40% {
+    transform: rotate(2deg) scale(1.02);
+  }
+
+  60% {
+    transform: rotate(-1deg) scale(1.01);
+  }
+
+  80% {
+    transform: rotate(1deg) scale(1.01);
+  }
+}
+
+/* Pop animation for buttons */
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Bounce in animation for cards appearing */
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+
+  60% {
+    transform: scale(1.03) translateY(-3px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Shake animation for emphasis */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20%,
+  60% {
+    transform: translateX(-3px);
+  }
+
+  40%,
+  80% {
+    transform: translateX(3px);
+  }
 }

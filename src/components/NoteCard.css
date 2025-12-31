@@ -1,23 +1,30 @@
 /**
- * NoteCard Styles
+ * NoteCard Styles - Hand-Drawn Design System
  */
 
 .note-card {
+    position: relative;
     background: #FFF;
-    border-radius: 16px;
+    border: 2px solid #2d2d2d;
+    border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
     padding: 16px 20px;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 3px 3px 0px 0px rgba(45, 45, 45, 0.1);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+    animation: bounceIn 0.4s ease-out backwards;
 }
 
 .note-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 6px 6px 0px 0px rgba(45, 45, 45, 0.2);
+    transform: rotate(-1.5deg) translateY(-5px) scale(1.02);
 }
 
 .note-card:active {
-    transform: translateY(0);
+    box-shadow: 2px 2px 0px 0px rgba(45, 45, 45, 0.1);
+    transform: rotate(0deg) translateY(0) scale(0.98);
+    transition: all 0.08s ease;
 }
 
 .note-card-content {
@@ -34,9 +41,10 @@
 }
 
 .note-card-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
+    font-family: 'Kalam', cursive;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2d2d2d;
     margin: 0;
     flex: 1;
     line-height: 1.3;
@@ -50,42 +58,51 @@
 }
 
 .note-card-duration {
-    font-size: 12px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
     font-weight: 500;
-    color: #E74C3C;
-    background: rgba(231, 76, 60, 0.1);
-    padding: 4px 10px;
-    border-radius: 12px;
+    color: #ff4d4d;
+    background: rgba(255, 77, 77, 0.1);
+    padding: 4px 12px;
+    border: 1px dashed #ff4d4d;
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     white-space: nowrap;
 }
 
 /* Similarity Badge */
 .similarity-badge {
-    font-size: 11px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px;
     font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 10px;
+    padding: 4px 10px;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     white-space: nowrap;
+    border: 1px solid;
 }
 
 .similarity-badge.high {
     background: rgba(46, 204, 113, 0.15);
     color: #27ae60;
+    border-color: #27ae60;
 }
 
 .similarity-badge.medium {
     background: rgba(241, 196, 15, 0.15);
     color: #d4a106;
+    border-color: #d4a106;
 }
 
 .similarity-badge.low {
     background: rgba(149, 165, 166, 0.15);
     color: #7f8c8d;
+    border-color: #7f8c8d;
 }
 
 .note-card-preview {
-    font-size: 14px;
-    color: #666;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 16px;
+    color: #2d2d2d;
+    opacity: 0.8;
     line-height: 1.5;
     margin: 0;
     display: -webkit-box;
@@ -97,11 +114,12 @@
 /* Highlight search terms */
 .note-card-preview mark.highlight,
 mark.highlight {
-    background: rgba(231, 76, 60, 0.2);
-    color: #E74C3C;
-    font-weight: 600;
-    padding: 0 2px;
-    border-radius: 2px;
+    background: rgba(255, 77, 77, 0.25);
+    color: #ff4d4d;
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 4px;
+    border-bottom: 2px solid #ff4d4d;
 }
 
 /* Match Info Section */
@@ -117,28 +135,33 @@ mark.highlight {
 }
 
 .match-label {
-    font-size: 11px;
-    color: #999;
-    font-weight: 500;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px;
+    color: #2d2d2d;
+    opacity: 0.5;
 }
 
 .match-chip {
-    font-size: 11px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 13px;
     font-weight: 500;
-    padding: 3px 8px;
-    border-radius: 8px;
-    background: rgba(231, 76, 60, 0.1);
-    color: #E74C3C;
+    padding: 3px 10px;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff4d4d;
+    border: 1px dashed #ff4d4d;
 }
 
 .match-chip.exact {
-    background: rgba(231, 76, 60, 0.15);
-    color: #C0392B;
+    background: rgba(255, 77, 77, 0.2);
+    color: #cc0000;
+    border-style: solid;
 }
 
 .match-chip.semantic {
-    background: rgba(155, 89, 182, 0.15);
-    color: #8e44ad;
+    background: rgba(45, 93, 161, 0.15);
+    color: #2d5da1;
+    border-color: #2d5da1;
 }
 
 /* Semantic Match Label */
@@ -146,12 +169,13 @@ mark.highlight {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
-    color: #8e44ad;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: #2d5da1;
 }
 
 .semantic-icon {
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .note-card-footer {
@@ -165,12 +189,14 @@ mark.highlight {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
-    color: #999;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
+    color: #2d2d2d;
+    opacity: 0.5;
 }
 
 .timestamp-icon {
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .note-card-actions {
@@ -179,61 +205,65 @@ mark.highlight {
 }
 
 .play-button {
-    width: 36px;
-    height: 36px;
-    border: 1px solid #E5E5E5;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #2d2d2d;
     background: #FFF;
-    border-radius: 50%;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
 }
 
 .play-button:hover {
-    border-color: #E74C3C;
-    background: rgba(231, 76, 60, 0.05);
+    background: #ff4d4d;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .play-button svg {
-    width: 14px;
-    height: 14px;
-    color: #666;
+    width: 16px;
+    height: 16px;
+    color: #2d2d2d;
     margin-left: 2px;
 }
 
 .play-button:hover svg {
-    color: #E74C3C;
+    color: white;
 }
 
 /* Delete Button */
 .delete-button {
-    width: 36px;
-    height: 36px;
-    border: 1px solid #E5E5E5;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #2d2d2d;
     background: #FFF;
-    border-radius: 50%;
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
+    box-shadow: 2px 2px 0px 0px #2d2d2d;
+    transition: all 0.1s ease;
 }
 
 .delete-button:hover {
-    border-color: #E74C3C;
-    background: rgba(231, 76, 60, 0.1);
+    background: #ff4d4d;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
+    transform: translate(1px, 1px);
 }
 
 .delete-button svg {
-    width: 14px;
-    height: 14px;
-    color: #999;
+    width: 16px;
+    height: 16px;
+    color: #2d2d2d;
 }
 
 .delete-button:hover svg {
-    color: #E74C3C;
+    color: white;
 }
 
 /* Topic Tags */
@@ -245,19 +275,21 @@ mark.highlight {
 }
 
 .note-tag {
-    font-size: 0.75rem;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 14px;
     font-weight: 500;
-    color: #666;
-    background-color: #f5f5f5;
-    padding: 2px 8px;
-    border-radius: 12px;
-    border: 1px solid #e5e5e5;
+    color: #2d2d2d;
+    background-color: #fff9c4;
+    padding: 3px 10px;
+    border: 1px solid #2d2d2d;
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
     white-space: nowrap;
-    transition: all 0.2s ease;
+    transition: all 0.1s ease;
+    box-shadow: 1px 1px 0px 0px #2d2d2d;
 }
 
 .note-tag:hover {
-    background-color: rgba(231, 76, 60, 0.1);
-    color: #E74C3C;
-    border-color: rgba(231, 76, 60, 0.2);
+    background-color: #ff4d4d;
+    color: white;
+    transform: rotate(-1deg);
 }

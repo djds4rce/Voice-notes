@@ -228,11 +228,6 @@ export function SearchPage({
                                     </div>
                                 </section>
                             )}
-
-                            <div className="end-of-results">
-                                <div className="end-icon">😊</div>
-                                <p>End of your scribbles.</p>
-                            </div>
                         </>
                     ) : (
                         <div className="no-results">

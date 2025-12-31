@@ -1,10 +1,5 @@
 /**
- * RecordingScreen Styles
- * 
- * Design tokens from mockups:
- * - Coral/red accent: #E74C3C
- * - Cream background: #FAF8F5
- * - Rounded UI elements
+ * RecordingScreen Styles - Hand-Drawn Design System
  */
 
 .recording-screen {
@@ -12,7 +7,9 @@
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(180deg, #FAF8F5 0%, #F5F0EB 100%);
+  background-color: #fdfbf7;
+  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-size: 24px 24px;
   padding: 20px;
   position: relative;
 }
@@ -28,13 +25,25 @@
 }
 
 .close-button {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: transparent;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #2d2d2d;
+  background: #FFF;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   font-size: 24px;
-  color: #666;
+  color: #2d2d2d;
   cursor: pointer;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background: #e5e0d8;
+  box-shadow: 1px 1px 0px 0px #2d2d2d;
+  transform: translate(1px, 1px);
 }
 
 .recording-indicator {
@@ -42,20 +51,22 @@
   align-items: center;
   gap: 8px;
   background: #FFF;
+  border: 2px solid #2d2d2d;
   padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 12px;
+  border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 1px;
-  color: #333;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  color: #2d2d2d;
+  box-shadow: 2px 2px 0px 0px rgba(45, 45, 45, 0.1);
 }
 
 .recording-dot {
-  width: 8px;
-  height: 8px;
-  background: #E74C3C;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  background: #ff4d4d;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   animation: pulse 1.5s ease-in-out infinite;
 }
 
@@ -69,18 +80,30 @@
 
   50% {
     opacity: 0.5;
-    transform: scale(1.2);
+    transform: scale(1.3);
   }
 }
 
 .settings-button {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: transparent;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #2d2d2d;
+  background: #FFF;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   font-size: 20px;
-  color: #666;
+  color: #2d2d2d;
   cursor: pointer;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-button:hover {
+  background: #e5e0d8;
+  box-shadow: 1px 1px 0px 0px #2d2d2d;
+  transform: translate(1px, 1px);
 }
 
 /* Timer */
@@ -88,10 +111,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #F5F0EB;
-  padding: 16px 24px;
-  border-radius: 24px;
+  background: #FFF;
+  border: 3px solid #2d2d2d;
+  padding: 20px 32px;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   margin-bottom: 40px;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
 }
 
 .timer-segment {
@@ -101,22 +126,27 @@
 }
 
 .timer-value {
-  font-size: 32px;
+  font-family: 'Kalam', cursive;
+  font-size: 40px;
   font-weight: 700;
-  color: #333;
+  color: #2d2d2d;
   font-feature-settings: 'tnum';
 }
 
 .timer-label {
-  font-size: 10px;
-  color: #999;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 12px;
+  color: #2d2d2d;
+  opacity: 0.5;
   letter-spacing: 1px;
 }
 
 .timer-separator {
-  font-size: 32px;
+  font-family: 'Kalam', cursive;
+  font-size: 40px;
   font-weight: 700;
-  color: #999;
+  color: #2d2d2d;
+  opacity: 0.5;
   margin: 0 4px;
   align-self: flex-start;
   margin-top: 8px;
@@ -136,14 +166,12 @@
   overflow-y: auto;
   scroll-behavior: smooth;
   padding: 10px 0;
-
-  /* Custom scrollbar */
   scrollbar-width: thin;
-  scrollbar-color: rgba(231, 76, 60, 0.3) transparent;
+  scrollbar-color: rgba(255, 77, 77, 0.3) transparent;
 }
 
 .transcript-scroll-area::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 
 .transcript-scroll-area::-webkit-scrollbar-track {
@@ -151,15 +179,15 @@
 }
 
 .transcript-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(231, 76, 60, 0.3);
-  border-radius: 2px;
+  background: rgba(255, 77, 77, 0.3);
+  border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
 }
 
 .quote-mark {
   position: absolute;
-  font-size: 48px;
-  color: rgba(231, 76, 60, 0.2);
-  font-family: Georgia, serif;
+  font-family: 'Kalam', cursive;
+  font-size: 64px;
+  color: rgba(255, 77, 77, 0.3);
   line-height: 1;
   z-index: 1;
 }
@@ -175,11 +203,12 @@
 }
 
 .transcript-text {
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 26px;
+  font-weight: 400;
+  color: #2d2d2d;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
   min-height: 50px;
 }
@@ -201,12 +230,13 @@
 }
 
 .tentative-text {
-  color: #999;
+  color: #2d2d2d;
+  opacity: 0.5;
   font-style: italic;
 }
 
 .cursor {
-  color: #E74C3C;
+  color: #ff4d4d;
   animation: blink 1s step-end infinite;
   margin-left: 2px;
 }
@@ -228,19 +258,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   height: 50px;
   margin-bottom: 10px;
 }
 
 .waveform-bar {
-  width: 4px;
-  background: linear-gradient(180deg, #E74C3C 0%, #FADBD8 100%);
-  border-radius: 2px;
+  width: 6px;
+  background: linear-gradient(180deg, #ff4d4d 0%, #e5e0d8 100%);
+  border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
   transition: height 0.1s ease-out;
 }
-
-
 
 /* Controls */
 .controls {
@@ -257,42 +285,49 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);
+  background: #ff4d4d;
   color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 16px 48px;
-  font-size: 16px;
+  border: 4px solid #2d2d2d;
+  border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
+  padding: 18px 56px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 22px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(231, 76, 60, 0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 6px 6px 0px 0px #2d2d2d;
+  transition: all 0.1s ease;
 }
 
 .stop-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(231, 76, 60, 0.4);
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
 }
 
 .stop-button:active {
-  transform: translateY(0);
+  box-shadow: none;
+  transform: translate(6px, 6px);
 }
 
 .stop-icon {
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .cancel-text-button {
   background: transparent;
   border: none;
-  color: #999;
-  font-size: 16px;
+  font-family: 'Patrick Hand', cursive;
+  color: #2d2d2d;
+  opacity: 0.6;
+  font-size: 18px;
   cursor: pointer;
   padding: 8px 16px;
+  text-decoration: underline;
+  text-decoration-style: dashed;
 }
 
 .cancel-text-button:hover {
-  color: #666;
+  opacity: 1;
+  color: #ff4d4d;
 }
 
 /* Saving State */
@@ -307,39 +342,41 @@
 .pencil-circle {
   width: 120px;
   height: 120px;
-  border: 3px solid #E74C3C;
-  border-radius: 50%;
+  border: 4px solid #2d2d2d;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  background: white;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
   animation: circleGrow 2s ease-in-out infinite;
 }
 
 .pencil-circle::before {
   content: '';
   position: absolute;
-  inset: -8px;
-  border: 2px solid rgba(231, 76, 60, 0.2);
-  border-radius: 50%;
+  inset: -12px;
+  border: 2px dashed rgba(45, 45, 45, 0.3);
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
 }
 
 @keyframes circleGrow {
 
   0%,
   100% {
-    transform: scale(1);
+    transform: scale(1) rotate(0deg);
   }
 
   50% {
-    transform: scale(1.05);
+    transform: scale(1.05) rotate(-2deg);
   }
 }
 
 .pencil-icon {
-  width: 40px;
-  height: 40px;
-  color: #E74C3C;
+  width: 48px;
+  height: 48px;
+  color: #ff4d4d;
   animation: pencilWrite 1s ease-in-out infinite;
 }
 
@@ -356,16 +393,19 @@
 }
 
 .saving-title {
-  font-size: 24px;
+  font-family: 'Kalam', cursive;
+  font-size: 28px;
   font-weight: 700;
-  color: #333;
+  color: #2d2d2d;
   margin: 0 0 8px 0;
   text-align: center;
 }
 
 .saving-subtitle {
-  font-size: 16px;
-  color: #999;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 18px;
+  color: #2d2d2d;
+  opacity: 0.6;
   margin: 0 0 48px 0;
 }
 
@@ -373,14 +413,24 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(231, 76, 60, 0.1);
-  color: #E74C3C;
-  border: none;
-  border-radius: 24px;
+  background: #e5e0d8;
+  color: #2d2d2d;
+  border: 2px solid #2d2d2d;
+  border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
   padding: 12px 32px;
-  font-size: 16px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 18px;
   font-weight: 500;
   cursor: pointer;
+  box-shadow: 3px 3px 0px 0px #2d2d2d;
+  transition: all 0.1s ease;
+}
+
+.cancel-button:hover {
+  background: #ff4d4d;
+  color: white;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(1px, 1px);
 }
 
 .cancel-icon {
@@ -403,45 +453,48 @@
 .model-loading-icon {
   width: 100px;
   height: 100px;
-  border: 3px solid #E74C3C;
-  border-radius: 50%;
+  border: 4px solid #2d2d2d;
+  border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 24px;
+  background: white;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
   animation: modelPulse 2s ease-in-out infinite;
 }
 
 .mic-loading {
-  width: 40px;
-  height: 40px;
-  color: #E74C3C;
+  width: 44px;
+  height: 44px;
+  color: #ff4d4d;
 }
 
 @keyframes modelPulse {
 
   0%,
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(1) rotate(0deg);
   }
 
   50% {
-    transform: scale(1.05);
-    opacity: 0.8;
+    transform: scale(1.05) rotate(-2deg);
   }
 }
 
 .model-loading-title {
-  font-size: 20px;
+  font-family: 'Kalam', cursive;
+  font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: #2d2d2d;
   margin: 0 0 8px 0;
 }
 
 .model-loading-subtitle {
-  font-size: 14px;
-  color: #999;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 16px;
+  color: #2d2d2d;
+  opacity: 0.6;
   margin: 0 0 24px 0;
   line-height: 1.4;
 }
