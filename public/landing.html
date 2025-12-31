@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fdfbf7" />
+
+    <!-- SEO Meta Tags -->
+    <title>AI Voice Note - Private Voice Notes with Local AI</title>
+    <meta name="description"
+        content="AI Voice Note - Private voice notes with AI transcription running 100% locally in your browser. No cloud, no data collection. Experience the future of browser-based AI." />
+    <meta name="keywords"
+        content="voice notes, AI transcription, privacy, local AI, WebGPU, Whisper, browser AI, speech to text" />
+    <meta name="author" content="AI Voice Note" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aivoicenote.app/" />
+    <meta property="og:title" content="AI Voice Note - Private Voice Notes with Local AI" />
+    <meta property="og:description"
+        content="Capture your thoughts instantly with AI-powered transcription — entirely in your browser. No cloud, no data collection." />
+    <meta property="og:image" content="/logo512.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://aivoicenote.app/" />
+    <meta property="twitter:title" content="AI Voice Note - Private Voice Notes with Local AI" />
+    <meta property="twitter:description"
+        content="Capture your thoughts instantly with AI-powered transcription — entirely in your browser. No cloud, no data collection." />
+    <meta property="twitter:image" content="/logo512.png" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://aivoicenote.app/" />
+
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Patrick+Hand&display=swap"
+        rel="stylesheet">
+
+    <!-- Inline Critical CSS -->
+    <style>
+        /* CSS Custom Properties */
+        :root {
+            --radius-wobbly: 255px 15px 225px 15px / 15px 225px 15px 255px;
+            --radius-wobbly-md: 15px 255px 15px 225px / 225px 15px 255px 15px;
+            --radius-wobbly-sm: 185px 25px 205px 25px / 25px 205px 25px 185px;
+            --radius-wobbly-button: 30px 60px 40px 70px / 60px 30px 70px 40px;
+            --radius-wobbly-circle: 60px 50px 55px 45px / 50px 60px 45px 55px;
+            --color-paper: #fdfbf7;
+            --color-paper-rgb: 253, 251, 247;
+            --color-pencil: #2d2d2d;
+            --color-pencil-rgb: 45, 45, 45;
+            --color-muted: #e5e0d8;
+            --color-card: #ffffff;
+            --color-accent: #ff4d4d;
+            --color-blue-pen: #2d5da1;
+            --color-dot-pattern: #e5e0d8;
+            --shadow-hand: 4px 4px 0px 0px var(--color-pencil);
+            --shadow-hand-sm: 2px 2px 0px 0px var(--color-pencil);
+            --shadow-hand-subtle: 3px 3px 0px 0px rgba(var(--color-pencil-rgb), 0.1);
+        }
+
+        /* Dark Mode */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-paper: #1a1a1a;
+                --color-paper-rgb: 26, 26, 26;
+                --color-pencil: #e8e4dc;
+                --color-pencil-rgb: 232, 228, 220;
+                --color-muted: #3a3a3a;
+                --color-card: #252525;
+                --color-accent: #ff6b6b;
+                --color-blue-pen: #5b8fd4;
+                --color-dot-pattern: #2a2a2a;
+                --shadow-hand: 4px 4px 0px 0px rgba(0, 0, 0, 0.5);
+                --shadow-hand-sm: 2px 2px 0px 0px rgba(0, 0, 0, 0.5);
+                --shadow-hand-subtle: 3px 3px 0px 0px rgba(0, 0, 0, 0.2);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Patrick Hand', cursive;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .landing-page {
+            min-height: 100vh;
+            background-color: var(--color-paper);
+            background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
+            background-size: 24px 24px;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .landing-hero {
+            position: relative;
+            padding: 60px 24px 80px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--color-card);
+            border: 2px solid var(--color-pencil);
+            border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
+            padding: 8px 16px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-hand-subtle);
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        .badge-text {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-pencil);
+            letter-spacing: 0.5px;
+        }
+
+        .hero-title {
+            font-family: 'Kalam', cursive;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--color-pencil);
+            margin: 0 0 16px 0;
+            transform: rotate(-1deg);
+            animation: bounceIn 0.6s ease-out 0.1s backwards;
+        }
+
+        .hero-tagline {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 20px;
+            color: var(--color-pencil);
+            opacity: 0.85;
+            line-height: 1.5;
+            margin: 0 0 32px 0;
+            animation: bounceIn 0.6s ease-out 0.2s backwards;
+        }
+
+        .hero-tagline strong {
+            color: var(--color-accent);
+            font-weight: inherit;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Patrick Hand', cursive;
+            font-size: 22px;
+            font-weight: 600;
+            background: var(--color-accent);
+            color: white;
+            border: 3px solid var(--color-pencil);
+            border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
+            padding: 16px 32px;
+            cursor: pointer;
+            box-shadow: var(--shadow-hand);
+            transition: all 0.15s ease;
+            animation: bounceIn 0.6s ease-out 0.3s backwards;
+            text-decoration: none;
+        }
+
+        .hero-cta:hover {
+            box-shadow: var(--shadow-hand-sm);
+            transform: translate(2px, 2px) rotate(-2deg);
+        }
+
+        .hero-cta:active {
+            box-shadow: none;
+            transform: translate(4px, 4px);
+        }
+
+        .cta-arrow {
+            font-size: 24px;
+            transition: transform 0.2s ease;
+        }
+
+        .hero-cta:hover .cta-arrow {
+            transform: translateX(4px);
+        }
+
+        /* Sections */
+        .landing-section {
+            padding: 48px 24px;
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-family: 'Kalam', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--color-pencil);
+            margin: 0 0 16px 0;
+            transform: rotate(-0.5deg);
+        }
+
+        .section-description {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 18px;
+            color: var(--color-pencil);
+            opacity: 0.8;
+            line-height: 1.6;
+            margin: 0 0 24px 0;
+        }
+
+        .section-description strong {
+            color: var(--color-blue-pen);
+            font-weight: inherit;
+        }
+
+        /* Privacy Section */
+        .privacy-section {
+            background: rgba(var(--color-pencil-rgb), 0.03);
+            border-top: 2px dashed var(--color-muted);
+            border-bottom: 2px dashed var(--color-muted);
+            max-width: 100%;
+            padding: 48px 24px;
+        }
+
+        .privacy-section .section-content {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .privacy-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .privacy-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--color-card);
+            border: 2px solid var(--color-pencil);
+            border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+            padding: 8px 14px;
+            font-family: 'Patrick Hand', cursive;
+            font-size: 14px;
+            color: var(--color-pencil);
+            box-shadow: var(--shadow-hand-subtle);
+        }
+
+        /* AI Section */
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .tech-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: var(--color-card);
+            border: 2px solid var(--color-pencil);
+            border-radius: 15px 255px 15px 225px / 225px 15px 255px 15px;
+            padding: 16px 24px;
+            box-shadow: var(--shadow-hand-subtle);
+            transition: transform 0.2s ease;
+        }
+
+        .tech-item:hover {
+            transform: rotate(-2deg) scale(1.05);
+        }
+
+        .tech-name {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 14px;
+            color: var(--color-pencil);
+            font-weight: 600;
+        }
+
+        /* Features Section */
+        .features-section {
+            padding-top: 56px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .feature-card {
+            background: var(--color-card);
+            border: 2px solid var(--color-pencil);
+            border-radius: var(--radius-wobbly-md);
+            padding: 20px 16px;
+            box-shadow: var(--shadow-hand-subtle);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .feature-card:hover {
+            transform: rotate(-1deg) translateY(-4px);
+            box-shadow: var(--shadow-hand-sm);
+        }
+
+        .feature-title {
+            font-family: 'Kalam', cursive;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-pencil);
+            margin: 0 0 8px 0;
+        }
+
+        .feature-description {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 14px;
+            color: var(--color-pencil);
+            opacity: 0.7;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 56px 24px;
+            background: rgba(var(--color-pencil-rgb), 0.03);
+            border-top: 2px dashed var(--color-muted);
+            max-width: 100%;
+        }
+
+        .cta-section .section-content {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .cta-title {
+            font-family: 'Kalam', cursive;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-pencil);
+            margin: 0 0 12px 0;
+            transform: rotate(-1deg);
+        }
+
+        .cta-description {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 18px;
+            color: var(--color-pencil);
+            opacity: 0.7;
+            margin: 0 0 24px 0;
+        }
+
+        /* Footer */
+        .landing-footer {
+            padding: 32px 24px;
+            text-align: center;
+            border-top: 2px dashed var(--color-muted);
+        }
+
+        .footer-text {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 16px;
+            color: var(--color-pencil);
+            opacity: 0.6;
+            margin: 0 0 8px 0;
+        }
+
+        .footer-domain {
+            font-family: 'Kalam', cursive;
+            font-size: 14px;
+            color: var(--color-blue-pen);
+            margin: 0;
+            font-weight: 700;
+        }
+
+        /* Animations */
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+
+            60% {
+                transform: scale(1.02) translateY(-5px);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .hero-title {
+                font-size: 36px;
+            }
+
+            .hero-tagline {
+                font-size: 18px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .privacy-badges {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tech-stack {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Cross-Origin Isolation Service Worker -->
+    <script src="coi-serviceworker.js"></script>
+
+    <div class="landing-page">
+        <!-- Hero Section -->
+        <header class="landing-hero">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="badge-text">100% Local & Private</span>
+                </div>
+
+                <h1 class="hero-title">AI Voice Note</h1>
+
+                <p class="hero-tagline">
+                    Capture your thoughts instantly with AI-powered transcription —
+                    <strong>entirely in your browser</strong>.
+                </p>
+
+                <a href="web.html" class="hero-cta">
+                    Get Started
+                    <span class="cta-arrow">→</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Privacy Section -->
+        <section class="privacy-section">
+            <div class="section-content">
+                <h2 class="section-title">Your Voice, Your Data</h2>
+                <p class="section-description">
+                    Every word you speak stays on <strong>your device</strong>. No cloud uploads,
+                    no third-party servers, no data collection. Your voice notes are processed
+                    entirely in your browser using cutting-edge WebGPU technology.
+                </p>
+
+                <div class="privacy-badges">
+                    <div class="privacy-badge">
+                        <span>No Cloud</span>
+                    </div>
+                    <div class="privacy-badge">
+                        <span>End-to-End Private</span>
+                    </div>
+                    <div class="privacy-badge">
+                        <span>Local Storage</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Exploration Section -->
+        <section class="landing-section ai-section">
+            <h2 class="section-title">AI in the Browser</h2>
+            <p class="section-description">
+                This is an <strong>exploration of running AI models directly in your browser</strong>.
+                Using WebGPU and Whisper AI, we're pushing the boundaries of what's possible
+                without sending a single byte to external servers.
+            </p>
+
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <span class="tech-name">WebGPU</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-name">Whisper AI</span>
+                </div>
+                <div class="tech-item">
+                    <span class="tech-name">Semantic Search</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="landing-section features-section">
+            <h2 class="section-title">Features</h2>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3 class="feature-title">Live Transcription</h3>
+                    <p class="feature-description">
+                        Watch your words appear in real-time as you speak
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h3 class="feature-title">Smart Search</h3>
+                    <p class="feature-description">
+                        Find notes by meaning, not just keywords
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h3 class="feature-title">Auto Tagging</h3>
+                    <p class="feature-description">
+                        AI-generated tags for easy organization
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h3 class="feature-title">Dark Mode</h3>
+                    <p class="feature-description">
+                        Easy on the eyes, day or night
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta-section">
+            <div class="section-content">
+                <h2 class="cta-title">Ready to start?</h2>
+                <p class="cta-description">
+                    No signup required. Just click and start recording.
+                </p>
+                <a href="web.html" class="hero-cta">
+                    Open App
+                    <span class="cta-arrow">→</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="landing-footer">
+            <p class="footer-text">Made for privacy enthusiasts</p>
+            <p class="footer-domain">aivoicenote.app</p>
+        </footer>
+    </div>
+</body>
+
+</html>

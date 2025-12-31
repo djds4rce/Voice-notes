@@ -21,10 +21,10 @@ let isLoading = false;
 
 // ===== MESSAGE HANDLERS =====
 
-async function handleLoad(modelId = null) {
+async function handleLoad({ modelId = null, taggingEnabled = true } = {}) {
   const targetModel = modelId || 'Xenova/whisper-base';
 
-  console.log(`[Worker] handleLoad called, target: ${targetModel}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
+  console.log(`[Worker] handleLoad called, target: ${targetModel}, taggingEnabled: ${taggingEnabled}, current: ${currentModelId}, pending: ${pendingModelId}, isLoading: ${isLoading}`);
 
   // If already loaded with same model, just send ready
   if (transcriber && currentModelId === targetModel && !isLoading) {
@@ -66,23 +66,27 @@ async function handleLoad(modelId = null) {
 
     await transcriber.warmup();
 
-    self.postMessage({ status: "loading", data: "Loading topic model..." });
-    await TopicGenerator.getInstance((progress) => {
-      // We can forward topic model progress if needed, or just let it load silently/with generic message
-      // For now, let's just log it or forward if it's significant, 
-      // but to avoid protocol confusion with Whisper progress, we might keep it simple.
-      // Or we can verify if the UI handles generic progress. 
-      // The UI maps file names to progress.
-      if (progress.status === "progress") {
-        self.postMessage({
-          status: "initiate",
-          file: progress.file,
-          name: progress.name,
-          status: progress.status,
-        });
-        self.postMessage(progress);
-      }
-    });
+    if (taggingEnabled) {
+      self.postMessage({ status: "loading", data: "Loading topic model..." });
+      await TopicGenerator.getInstance((progress) => {
+        // We can forward topic model progress if needed, or just let it load silently/with generic message
+        // For now, let's just log it or forward if it's significant, 
+        // but to avoid protocol confusion with Whisper progress, we might keep it simple.
+        // Or we can verify if the UI handles generic progress. 
+        // The UI maps file names to progress.
+        if (progress.status === "progress") {
+          self.postMessage({
+            status: "initiate",
+            file: progress.file,
+            name: progress.name,
+            status: progress.status,
+          });
+          self.postMessage(progress);
+        }
+      });
+    } else {
+      console.log("[Worker] Tagging disabled, skipping topic model loading");
+    }
 
     isLoading = false;
     pendingModelId = null;
@@ -265,7 +269,7 @@ self.addEventListener("message", async (e) => {
 
   switch (type) {
     case "load":
-      await handleLoad(data?.modelId);
+      await handleLoad(data);
       break;
 
     case "generate":

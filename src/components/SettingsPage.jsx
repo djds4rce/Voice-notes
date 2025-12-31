@@ -179,25 +179,7 @@ export function SettingsPage({
 
             {/* Settings Content */}
             <div className="settings-content">
-                {/* Appearance Section */}
-                <div className="settings-section">
-                    <div className="setting-item">
-                        <div className="setting-info">
-                            <h3 className="setting-label">Dark Mode</h3>
-                            <p className="setting-description">
-                                Switch between light and dark themes
-                            </p>
-                        </div>
-                        <label className="toggle-switch">
-                            <input
-                                type="checkbox"
-                                checked={darkMode}
-                                onChange={(e) => setDarkMode(e.target.checked)}
-                            />
-                            <span className="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
+
 
                 {/* Language Setting */}
                 <div className="settings-section">
@@ -297,6 +279,27 @@ export function SettingsPage({
                                 checked={isEnglish && taggingEnabled}
                                 onChange={(e) => setTaggingEnabled(e.target.checked)}
                                 disabled={!isEnglish}
+                            />
+                            <span className="toggle-slider"></span>
+                        </label>
+                    </div>
+
+
+                </div>
+                {/* Appearance Section */}
+                <div className="settings-section">
+                    <div className="setting-item">
+                        <div className="setting-info">
+                            <h3 className="setting-label">Dark Mode</h3>
+                            <p className="setting-description">
+                                Switch between light and dark themes
+                            </p>
+                        </div>
+                        <label className="toggle-switch">
+                            <input
+                                type="checkbox"
+                                checked={darkMode}
+                                onChange={(e) => setDarkMode(e.target.checked)}
                             />
                             <span className="toggle-slider"></span>
                         </label>

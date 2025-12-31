@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 // Components
 import { LandingPage } from './components/LandingPage';
@@ -83,7 +83,7 @@ function AppContent() {
   // Tagging setting (only available for English)
   const [taggingEnabled, setTaggingEnabled] = useState(() => {
     const saved = localStorage.getItem('tagging-enabled');
-    return saved !== null ? saved === 'true' : true; // Default enabled
+    return saved !== null ? saved === 'true' : false; // Default disabled
   });
 
   // Persist feature settings to localStorage
@@ -186,10 +186,17 @@ function AppContent() {
   // Load Whisper model
   const loadModel = useCallback((modelId, options = {}) => {
     const { forceReload = false } = options;
-    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload);
-    worker.current?.postMessage({ type: 'load', data: { modelId: modelId || whisperModel } });
+    const shouldLoadTags = isEnglish && taggingEnabled;
+    console.log('[App] loadModel called, modelId:', modelId, 'forceReload:', forceReload, 'taggingEnabled:', shouldLoadTags);
+    worker.current?.postMessage({
+      type: 'load',
+      data: {
+        modelId: modelId || whisperModel,
+        taggingEnabled: shouldLoadTags
+      }
+    });
     setStatus('loading');
-  }, [whisperModel]);
+  }, [whisperModel, isEnglish, taggingEnabled]);
 
   // Auto-load model on mount (only once)
   const hasTriggeredLoad = useRef(false);
@@ -209,7 +216,14 @@ function AppContent() {
       const timer = setTimeout(() => {
         console.log('[App] Loading new model:', whisperModel);
         previousModelRef.current = whisperModel;
-        worker.current?.postMessage({ type: 'load', data: { modelId: whisperModel } });
+        const shouldLoadTags = isEnglish && taggingEnabled;
+        worker.current?.postMessage({
+          type: 'load',
+          data: {
+            modelId: whisperModel,
+            taggingEnabled: shouldLoadTags
+          }
+        });
         setStatus('loading');
       }, 5000);
 
@@ -218,7 +232,7 @@ function AppContent() {
         clearTimeout(timer);
       };
     }
-  }, [whisperModel]);
+  }, [whisperModel, isEnglish, taggingEnabled]);
 
   // Save a new note
   const handleSaveNote = useCallback(async ({ transcript, audioBlob, durationSeconds, wordTimestamps, tags }) => {
@@ -364,7 +378,7 @@ function AppContent() {
       <Routes>
         <Route
           path="/"
-          element={<LandingPage />}
+          element={<Navigate to="/notes" replace />}
         />
         <Route
           path="/notes"
@@ -452,9 +466,9 @@ import { useParams } from 'react-router-dom';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppContent />
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
