@@ -385,6 +385,12 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
   } catch (error) {
     console.error("Finalize error:", error);
 
+    // Send error message to display on saving screen
+    self.postMessage({
+      status: "loading",
+      data: `Transcription failed: ${error.message || 'Unknown error'}`
+    });
+
     // Still try to finalize even if transcription failed
     const result = agreementProcessor.finalize();
     self.postMessage({
@@ -402,6 +408,7 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
       output: result.committed,
       committed: result.committed,
       committedChunks: agreementProcessor.getAllCommittedChunks(),
+      error: error.message || 'Transcription failed',
     });
   }
 
