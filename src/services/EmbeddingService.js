@@ -4,9 +4,13 @@
  * Generates text embeddings using Transformers.js for semantic search.
  * Uses all-MiniLM-L6-v2 which produces 384-dimensional vectors.
  * Loads lazily on first use to avoid blocking initial app load.
+ * 
+ * Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
+ * @see https://github.com/huggingface/transformers.js/issues/1242
  */
 
 import { pipeline } from '@huggingface/transformers';
+import { getRecommendedDevice } from '../utils/deviceDetection.js';
 
 /**
  * Device-specific configuration for Embedding model
@@ -34,8 +38,8 @@ class EmbeddingService {
 
     static MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 
-    static async getInstance(progressCallback = null, device = "webgpu") {
-        const targetDevice = device || "webgpu";
+    static async getInstance(progressCallback = null, device = null) {
+        const targetDevice = device || getRecommendedDevice();
 
         // If device changed, reset instance
         if (this.instance && this.currentDevice !== targetDevice) {
@@ -51,12 +55,13 @@ class EmbeddingService {
         return this.instance;
     }
 
-    async load(progressCallback = null, device = "webgpu") {
+    async load(progressCallback = null, device = null) {
+        const targetDevice = device || getRecommendedDevice();
         // If already loaded with same device, return
-        if (this.embedder && this.device === device) return;
+        if (this.embedder && this.device === targetDevice) return;
 
         // If device changed, need to reload
-        if (this.embedder && this.device !== device) {
+        if (this.embedder && this.device !== targetDevice) {
             this.embedder = null;
         }
 
@@ -66,10 +71,10 @@ class EmbeddingService {
         }
 
         this.loading = true;
-        this.device = device;
+        this.device = targetDevice;
 
         // Get device-specific configuration
-        const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
+        const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
 
         this.loadPromise = pipeline('feature-extraction', EmbeddingService.MODEL_ID, {
             dtype: config.dtype,

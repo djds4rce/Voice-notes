@@ -1,5 +1,6 @@
 
 import { pipeline, env } from "@huggingface/transformers";
+import { getRecommendedDevice } from "./utils/deviceDetection.js";
 
 // Skip local checks for better browser/worker compatibility in some environments
 env.allowLocalModels = false;
@@ -7,6 +8,9 @@ env.useBrowserCache = true;
 
 // Using SmolLM2-360M-Instruct as a high-quality, non-gated alternative to Gemma 270M
 // which currently requires authentication/gating even for ONNX versions.
+// 
+// Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
+// @see https://github.com/huggingface/transformers.js/issues/1242
 const MODEL_ID = "HuggingFaceTB/SmolLM2-360M-Instruct";
 // const MODEL_ID = "onnx-community/gemma-3-270m-it"; // Requires HF Token
 // Fallback if the specific quantization isn't found, or use specific revision if needed.
@@ -40,8 +44,8 @@ export class TopicGenerator {
     static instance = null;
     static currentDevice = null;
 
-    static async getInstance(progressCallback = null, device = "webgpu") {
-        const targetDevice = device || "webgpu";
+    static async getInstance(progressCallback = null, device = null) {
+        const targetDevice = device || getRecommendedDevice();
 
         // If device changed, reset instance
         if (TopicGenerator.instance && TopicGenerator.currentDevice !== targetDevice) {

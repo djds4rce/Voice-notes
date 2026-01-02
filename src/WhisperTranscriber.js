@@ -1,9 +1,13 @@
 import { pipeline } from "@huggingface/transformers";
+import { getRecommendedDevice } from "./utils/deviceDetection.js";
 
 /**
  * Device-specific configuration for Whisper model
  * - WebGPU: Use high precision encoder with quantized decoder for GPU acceleration
  * - WASM: Use fully quantized model for CPU efficiency
+ * 
+ * Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
+ * @see https://github.com/huggingface/transformers.js/issues/1242
  */
 const PER_DEVICE_CONFIG = {
     webgpu: {
@@ -41,9 +45,9 @@ export class WhisperTranscriber {
         this.transcriber = transcriber;
     }
 
-    static async getInstance(progressCallback = null, modelId = null, device = "webgpu") {
+    static async getInstance(progressCallback = null, modelId = null, device = null) {
         const targetModel = modelId || this.DEFAULT_MODEL_ID;
-        const targetDevice = device || "webgpu";
+        const targetDevice = device || getRecommendedDevice();
 
         // If model or device changed, reset instance
         if (this.instance && (this.currentModelId !== targetModel || this.currentDevice !== targetDevice)) {

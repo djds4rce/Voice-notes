@@ -4,11 +4,34 @@
  * Uses:
  * - WhisperTranscriber: Handles Whisper model loading and inference
  * - LocalAgreementProcessor: Handles transcription stability and deduplication
+ * 
+ * Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
+ * @see https://github.com/huggingface/transformers.js/issues/1242
  */
 
 import { WhisperTranscriber } from "./WhisperTranscriber.js";
 import { LocalAgreementProcessor } from "./LocalAgreementProcessor.js";
 import { TopicGenerator } from "./TopicGenerator.js";
+
+// ===== DEVICE DETECTION (Worker Context) =====
+
+/**
+ * Detect if running on an Apple device (iOS/macOS Safari)
+ * Works in Web Worker context using self.navigator
+ */
+function isAppleDevice() {
+  const ua = self.navigator?.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isMacSafari = /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Firefox|Edg/.test(ua);
+  return isIOS || isMacSafari;
+}
+
+/**
+ * Get recommended device, forcing WASM on Apple devices
+ */
+function getRecommendedDevice() {
+  return isAppleDevice() ? 'wasm' : 'webgpu';
+}
 
 // ===== INSTANCES =====
 
@@ -26,9 +49,9 @@ const MAX_LOAD_ATTEMPTS = 2; // Try WebGPU once, then WASM once
 
 // ===== MESSAGE HANDLERS =====
 
-async function handleLoad({ modelId = null, taggingEnabled = true, device = "webgpu" } = {}) {
+async function handleLoad({ modelId = null, taggingEnabled = true, device = null } = {}) {
   const targetModel = modelId || 'Xenova/whisper-base';
-  let targetDevice = device;
+  let targetDevice = device || getRecommendedDevice();
 
   // If already loaded with same model and device, just send ready
   if (transcriber && currentModelId === targetModel && currentDevice === targetDevice && !isLoading) {
