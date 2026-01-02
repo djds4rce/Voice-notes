@@ -475,6 +475,9 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 wordTimestamps: committedChunksRef.current,
                 tags: tagsRef.current,
             });
+        } else {
+            // Show alert if transcript is empty
+            alert('No transcript was generated. The recording was not saved. Please try again.');
         }
 
         setIsSaving(false);
