@@ -8,21 +8,21 @@
  * - Routing between pages
  */
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { HashRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 // Components
-import { LandingPage } from './components/LandingPage';
 import { NotesListPage } from './components/NotesListPage';
 import { RecordingScreen } from './components/RecordingScreen';
 import { AudioPlayerV2 as AudioPlayer } from './components/AudioPlayerV2';
-import { SearchPage } from './components/SearchPage';
 import { SettingsPage } from './components/SettingsPage';
-import Progress from './components/Progress';
 
 // Services
 import DatabaseService from './services/DatabaseService';
 import EmbeddingService from './services/EmbeddingService';
+
+// Hooks
+import { useWhisperModel, DEVICE } from './hooks/useWhisperModel';
 
 // Context
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
@@ -30,28 +30,20 @@ import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 // Styles
 import './App.css';
 
-const IS_WEBGPU_AVAILABLE = !!navigator.gpu;
-
-// Check for localStorage override to force WASM mode (for testing)
-const forceWasm = localStorage.getItem('force-wasm') === 'true';
-
-// Determine device: respect override, otherwise detect capability
-const DEVICE = (IS_WEBGPU_AVAILABLE && !forceWasm) ? "webgpu" : "wasm";
-
 
 function AppContent() {
   const navigate = useNavigate();
 
-  // Worker reference for Whisper transcription
-  const worker = useRef(null);
+  // Whisper model loading (custom hook handles worker, loading, and auto-preload)
+  const {
+    worker,
+    status,
+    loadingMessage,
+    progressItems,
+  } = useWhisperModel();
 
   // Service instances
   const [db, setDb] = useState(null);
-
-  // Model loading state
-  const [status, setStatus] = useState(null);
-  const [loadingMessage, setLoadingMessage] = useState('');
-  const [progressItems, setProgressItems] = useState([]);
 
   // Notes state
   const [notes, setNotes] = useState([]);
@@ -64,10 +56,7 @@ function AppContent() {
 
   // Get settings from context
   const {
-    language,
-    whisperModel,
     semanticSearchEnabled,
-    taggingEnabled,
     isEnglish,
   } = useSettings();
 
@@ -89,110 +78,6 @@ function AppContent() {
     }
     initDb();
   }, []);
-
-  // Setup worker for Whisper
-  useEffect(() => {
-    if (!worker.current) {
-      worker.current = new Worker(new URL('./worker.js', import.meta.url), {
-        type: 'module',
-      });
-    }
-
-    const onMessageReceived = (e) => {
-      switch (e.data.status) {
-        case 'loading':
-          setStatus('loading');
-          setLoadingMessage(e.data.data);
-          break;
-
-        case 'initiate':
-          setProgressItems((prev) => [...prev, e.data]);
-          break;
-
-        case 'progress':
-          setProgressItems((prev) =>
-            prev.map((item) => {
-              if (item.file === e.data.file) {
-                return { ...item, ...e.data };
-              }
-              return item;
-            }),
-          );
-          break;
-
-        case 'done':
-          setProgressItems((prev) =>
-            prev.filter((item) => item.file !== e.data.file),
-          );
-          break;
-
-        case 'ready':
-          setStatus('ready');
-          break;
-
-        case 'error':
-          setStatus('error');
-          setLoadingMessage(e.data.error || 'Failed to load model');
-          break;
-      }
-    };
-
-    worker.current.addEventListener('message', onMessageReceived);
-
-    return () => {
-      worker.current.removeEventListener('message', onMessageReceived);
-    };
-  }, []);
-
-  // Load Whisper model
-  const loadModel = useCallback((modelId, options = {}) => {
-    const { forceReload = false } = options;
-    const shouldLoadTags = isEnglish && taggingEnabled;
-    worker.current?.postMessage({
-      type: 'load',
-      data: {
-        modelId: modelId || whisperModel,
-        taggingEnabled: shouldLoadTags,
-        device: DEVICE
-      }
-    });
-    setStatus('loading');
-  }, [whisperModel, isEnglish, taggingEnabled]);
-
-  // Auto-load model on mount (only once)
-  // No longer gated on WebGPU - will use WASM fallback if needed
-  const hasTriggeredLoad = useRef(false);
-  useEffect(() => {
-    if (!hasTriggeredLoad.current) {
-      hasTriggeredLoad.current = true;
-      loadModel();
-    }
-  }, []);
-
-  // Auto-reload model when whisperModel setting changes (debounced by 5 seconds)
-  const previousModelRef = useRef(whisperModel);
-  useEffect(() => {
-    if (previousModelRef.current !== whisperModel && hasTriggeredLoad.current) {
-
-      const timer = setTimeout(() => {
-        previousModelRef.current = whisperModel;
-        const shouldLoadTags = isEnglish && taggingEnabled;
-        worker.current?.postMessage({
-          type: 'load',
-          data: {
-            modelId: whisperModel,
-            taggingEnabled: shouldLoadTags,
-            device: DEVICE
-          }
-        });
-        setStatus('loading');
-      }, 5000);
-
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [whisperModel, isEnglish, taggingEnabled]);
 
   // Save a new note
   const handleSaveNote = useCallback(async ({ transcript, audioBlob, durationSeconds, wordTimestamps, tags }) => {
