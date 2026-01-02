@@ -289,6 +289,7 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
       let position = 0;
       let chunkIndex = 0;
       let lastProcessedTime = 0; // Track where we left off to avoid duplicates
+      let transcriptionErrors = [];
 
       while (position < audio.length) {
         const endPosition = Math.min(position + CHUNK_SIZE, audio.length);
@@ -297,22 +298,28 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         // Only process if chunk is at least 0.5 seconds
         if (audioChunk.length >= 8000) {
           const chunkStartTime = position / 16000;
-          const { text, chunks, tps } = await transcriber.transcribe(audioChunk, language);
 
-          // Adjust chunk timestamps to absolute position and filter out overlap duplicates
-          const adjustedChunks = chunks
-            .map(c => ({
-              ...c,
-              start: c.start + chunkStartTime,
-              end: c.end + chunkStartTime,
-            }))
-            .filter(c => c.start >= lastProcessedTime); // Only keep words after last processed time
+          try {
+            const { text, chunks, tps } = await transcriber.transcribe(audioChunk, language);
 
-          allChunks = allChunks.concat(adjustedChunks);
+            // Adjust chunk timestamps to absolute position and filter out overlap duplicates
+            const adjustedChunks = chunks
+              .map(c => ({
+                ...c,
+                start: c.start + chunkStartTime,
+                end: c.end + chunkStartTime,
+              }))
+              .filter(c => c.start >= lastProcessedTime); // Only keep words after last processed time
 
-          // Update last processed time to the end of this chunk's content
-          if (adjustedChunks.length > 0) {
-            lastProcessedTime = adjustedChunks[adjustedChunks.length - 1].end;
+            allChunks = allChunks.concat(adjustedChunks);
+
+            // Update last processed time to the end of this chunk's content
+            if (adjustedChunks.length > 0) {
+              lastProcessedTime = adjustedChunks[adjustedChunks.length - 1].end;
+            }
+          } catch (chunkError) {
+            console.error(`[Worker] Error transcribing chunk ${chunkIndex}:`, chunkError);
+            transcriptionErrors.push(`Chunk ${chunkIndex}: ${chunkError.message}`);
           }
 
           chunkIndex++;
@@ -329,6 +336,11 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         if (position <= 0 || endPosition >= audio.length) {
           position = endPosition; // Prevent infinite loop
         }
+      }
+
+      // If we had any errors, throw them so they get reported
+      if (transcriptionErrors.length > 0 && allChunks.length === 0) {
+        throw new Error(`All chunks failed: ${transcriptionErrors.join('; ')}`);
       }
 
       // Process all chunks through agreement processor
