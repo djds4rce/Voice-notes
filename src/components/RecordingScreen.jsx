@@ -363,14 +363,9 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 }, 2000);
             });
 
-            // Request final data and stop
+            // Request final data and stop the MediaRecorder
             recorderRef.current.requestData();
             recorderRef.current.stop();
-        }
-
-        // Stop stream (stop audio input)
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
         }
 
         // Wait for final data to arrive
@@ -378,6 +373,11 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             console.log('[RecordingScreen] Waiting for final data chunk...');
             await finalDataPromise;
             console.log('[RecordingScreen] Final data chunk received');
+        }
+
+        // Stop stream AFTER getting final data (iOS needs stream active for MediaRecorder)
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
         }
 
         // Now send finalize message to process any remaining audio and commit all tentative text
