@@ -134,9 +134,13 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
     currentModelId = targetModel;
     currentDevice = targetDevice;
 
-    self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
-
-    await transcriber.warmup();
+    // Skip warmup on iOS - not needed for WASM and can cause memory crashes
+    if (!isAppleDevice()) {
+      self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
+      await transcriber.warmup();
+    } else {
+      self.postMessage({ status: "loading", data: "Model ready..." });
+    }
 
     if (taggingEnabled) {
       self.postMessage({ status: "loading", data: "Loading topic model..." });
@@ -172,7 +176,8 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
     currentDevice = null;
 
     // Post error status and attempt automatic retry with fallback
-    if (loadAttempts < MAX_LOAD_ATTEMPTS) {
+    // Don't auto-retry on iOS - retrying doubles memory usage and causes crashes
+    if (!isAppleDevice() && loadAttempts < MAX_LOAD_ATTEMPTS) {
       // Retry with WASM fallback
       setTimeout(() => {
         handleLoad({ modelId, taggingEnabled, device: "wasm" });
