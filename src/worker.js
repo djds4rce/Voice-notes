@@ -33,11 +33,40 @@ function getRecommendedDevice() {
   return isAppleDevice() ? 'wasm' : 'webgpu';
 }
 
+// ===== ENGLISH-ONLY MODEL OPTIMIZATION =====
+
+/**
+ * English-only Whisper models are smaller and faster for English transcription.
+ * Maps base model to its English-only variant.
+ */
+const ENGLISH_ONLY_WHISPER_MODELS = {
+  'Xenova/whisper-tiny': 'Xenova/whisper-tiny.en',
+  'Xenova/whisper-base': 'Xenova/whisper-base.en',
+  'Xenova/whisper-small': 'Xenova/whisper-small.en',
+  'Xenova/whisper-medium': 'Xenova/whisper-medium.en',
+  // Large models don't have English-only variants
+  'Xenova/whisper-large': 'Xenova/whisper-large',
+  'Xenova/whisper-large-v2': 'Xenova/whisper-large-v2',
+  'Xenova/whisper-large-v3': 'Xenova/whisper-large-v3',
+};
+
+/**
+ * Get the optimal Whisper model based on language.
+ * For English, returns the English-only variant if available.
+ */
+function getOptimalWhisperModel(baseModel, language) {
+  if (language === 'en' && ENGLISH_ONLY_WHISPER_MODELS[baseModel]) {
+    return ENGLISH_ONLY_WHISPER_MODELS[baseModel];
+  }
+  return baseModel;
+}
+
 // ===== INSTANCES =====
 
 let transcriber = null;
 let currentModelId = null;
 let currentDevice = null; // Track current device
+let currentLanguage = null; // Track current language for model optimization
 let pendingModelId = null; // Track model being loaded
 const agreementProcessor = new LocalAgreementProcessor();
 let isProcessing = false;
@@ -49,8 +78,10 @@ const MAX_LOAD_ATTEMPTS = 2; // Try WebGPU once, then WASM once
 
 // ===== MESSAGE HANDLERS =====
 
-async function handleLoad({ modelId = null, taggingEnabled = true, device = null } = {}) {
-  const targetModel = modelId || 'Xenova/whisper-base';
+async function handleLoad({ modelId = null, taggingEnabled = true, device = null, language = 'en' } = {}) {
+  const baseModel = modelId || 'Xenova/whisper-base';
+  // Use English-only model when language is 'en' for better performance
+  const targetModel = getOptimalWhisperModel(baseModel, language);
   let targetDevice = device || getRecommendedDevice();
 
   // If already loaded with same model and device, just send ready

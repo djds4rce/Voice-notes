@@ -40,6 +40,8 @@ export function useWhisperModel() {
     const hasTriggeredLoad = useRef(false);
     // Track previous model to detect changes
     const previousModelRef = useRef(null);
+    // Track previous language to detect changes (English uses .en models)
+    const previousLanguageRef = useRef(null);
 
     // Setup worker for Whisper
     useEffect(() => {
@@ -105,7 +107,8 @@ export function useWhisperModel() {
             data: {
                 modelId: modelId || whisperModel,
                 taggingEnabled: shouldLoadTags,
-                device: DEVICE
+                device: DEVICE,
+                language: isEnglish ? 'en' : 'other',
             }
         });
         setStatus('loading');
@@ -120,6 +123,7 @@ export function useWhisperModel() {
         if (!hasTriggeredLoad.current) {
             hasTriggeredLoad.current = true;
             previousModelRef.current = whisperModel;
+            previousLanguageRef.current = isEnglish;
 
             const shouldLoadTags = isEnglish && taggingEnabled;
             worker.current?.postMessage({
@@ -127,30 +131,35 @@ export function useWhisperModel() {
                 data: {
                     modelId: whisperModel,
                     taggingEnabled: shouldLoadTags,
-                    device: DEVICE
+                    device: DEVICE,
+                    language: isEnglish ? 'en' : 'other',
                 }
             });
             setStatus('loading');
         }
     }, [whisperModel, isEnglish, taggingEnabled]);
 
-    // Auto-reload model when whisperModel setting changes (debounced by 5 seconds)
+    // Auto-reload model when whisperModel or language changes (debounced by 5 seconds)
     useEffect(() => {
         // Skip if initial load hasn't happened yet
         if (!hasTriggeredLoad.current) return;
 
-        // Skip if model hasn't actually changed
-        if (previousModelRef.current === whisperModel) return;
+        // Skip if neither model nor language changed
+        const modelChanged = previousModelRef.current !== whisperModel;
+        const languageChanged = previousLanguageRef.current !== isEnglish;
+        if (!modelChanged && !languageChanged) return;
 
         const timer = setTimeout(() => {
             previousModelRef.current = whisperModel;
+            previousLanguageRef.current = isEnglish;
             const shouldLoadTags = isEnglish && taggingEnabled;
             worker.current?.postMessage({
                 type: 'load',
                 data: {
                     modelId: whisperModel,
                     taggingEnabled: shouldLoadTags,
-                    device: DEVICE
+                    device: DEVICE,
+                    language: isEnglish ? 'en' : 'other',
                 }
             });
             setStatus('loading');

@@ -90,7 +90,7 @@ export class WhisperTranscriber {
     /**
      * Transcribe audio to text with word-level timestamps
      * @param {Float32Array} audio - Audio samples at 16kHz
-     * @param {string} language - Language code (e.g., "en")
+     * @param {string} language - Language code (e.g., "en") - ignored for English-only models
      * @returns {Promise<{text: string, chunks: Array<{text: string, start: number, end: number}>, tps: number}>}
      */
     async transcribe(audio, language) {
@@ -99,20 +99,23 @@ export class WhisperTranscriber {
         let result;
         let hasWordTimestamps = false;
 
+        // English-only models (*.en) don't accept language or task parameters
+        const isEnglishOnlyModel = WhisperTranscriber.currentModelId?.endsWith('.en');
+        const transcribeOptions = isEnglishOnlyModel
+            ? { return_timestamps: "word" }
+            : { language, return_timestamps: "word" };
+
         try {
             // Try to get word-level timestamps first
-            result = await this.transcriber(audio, {
-                language,
-                return_timestamps: "word",
-            });
+            result = await this.transcriber(audio, transcribeOptions);
             hasWordTimestamps = result.chunks && result.chunks.length > 0;
         } catch (e) {
             console.warn("[Whisper] Word timestamps not supported, falling back to segment timestamps:", e.message);
             // Fall back to segment-level timestamps
-            result = await this.transcriber(audio, {
-                language,
-                return_timestamps: true,
-            });
+            const fallbackOptions = isEnglishOnlyModel
+                ? { return_timestamps: true }
+                : { language, return_timestamps: true };
+            result = await this.transcriber(audio, fallbackOptions);
         }
 
         const endTime = performance.now();
