@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '../contexts/SettingsContext';
 import Progress from './Progress';
 import './RecordingScreen.css';
 
@@ -20,8 +21,11 @@ const MAX_SAMPLES = WHISPER_SAMPLING_RATE * MAX_AUDIO_LENGTH;
 const WINDOW_SHIFT = 20; // seconds
 const WINDOW_SHIFT_SAMPLES = WHISPER_SAMPLING_RATE * WINDOW_SHIFT;
 
-export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressItems = [], loadingMessage = '', language = 'en', taggingEnabled = true }) {
+export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressItems = [], loadingMessage = '' }) {
     const navigate = useNavigate();
+
+    // Get settings from context
+    const { language, taggingEnabled, isEnglish } = useSettings();
 
     // Track if we're waiting for model to load
     const [waitingForModel, setWaitingForModel] = useState(whisperStatus !== 'ready');
@@ -414,7 +418,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 // process the audio, and commit all remaining tentative text
                 worker?.postMessage({
                     type: 'finalize',
-                    data: { audio: audioToProcess, language, audioWindowStart, taggingEnabled },
+                    data: { audio: audioToProcess, language, audioWindowStart, taggingEnabled: isEnglish && taggingEnabled },
                 });
 
                 // Wait for finalization to complete

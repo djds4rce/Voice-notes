@@ -24,6 +24,9 @@ import Progress from './components/Progress';
 import DatabaseService from './services/DatabaseService';
 import EmbeddingService from './services/EmbeddingService';
 
+// Context
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+
 // Styles
 import './App.css';
 
@@ -59,67 +62,14 @@ function AppContent() {
   // Embedding model loading state for search
   const [embeddingStatus, setEmbeddingStatus] = useState(null);
 
-  // Language setting (persisted to localStorage)
-  const [language, setLanguage] = useState(() => {
-    const saved = localStorage.getItem('whisper-language');
-    return saved || 'en';
-  });
-
-  // Persist language changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('whisper-language', language);
-  }, [language]);
-
-  // Whisper model setting (persisted to localStorage)
-  const [whisperModel, setWhisperModel] = useState(() => {
-    const saved = localStorage.getItem('whisper-model');
-    return saved || 'Xenova/whisper-base';
-  });
-
-  // Persist model changes to localStorage
-  useEffect(() => {
-    localStorage.setItem('whisper-model', whisperModel);
-  }, [whisperModel]);
-
-  // Semantic search setting (only available for English)
-  const [semanticSearchEnabled, setSemanticSearchEnabled] = useState(() => {
-    const saved = localStorage.getItem('semantic-search-enabled');
-    return saved !== null ? saved === 'true' : true; // Default enabled
-  });
-
-  // Tagging setting (only available for English)
-  const [taggingEnabled, setTaggingEnabled] = useState(() => {
-    const saved = localStorage.getItem('tagging-enabled');
-    return saved !== null ? saved === 'true' : false; // Default disabled
-  });
-
-  // Persist feature settings to localStorage
-  useEffect(() => {
-    localStorage.setItem('semantic-search-enabled', semanticSearchEnabled);
-  }, [semanticSearchEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('tagging-enabled', taggingEnabled);
-  }, [taggingEnabled]);
-
-  // Dark mode setting
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('dark-mode');
-    return saved !== null ? saved === 'true' : false; // Default to light mode
-  });
-
-  // Apply dark mode to document and persist
-  useEffect(() => {
-    localStorage.setItem('dark-mode', darkMode);
-    if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
-  }, [darkMode]);
-
-  // Auto-disable features when language is not English
-  const isEnglish = language === 'en';
+  // Get settings from context
+  const {
+    language,
+    whisperModel,
+    semanticSearchEnabled,
+    taggingEnabled,
+    isEnglish,
+  } = useSettings();
 
   // Initialize database
   useEffect(() => {
@@ -400,28 +350,12 @@ function AppContent() {
               whisperStatus={status}
               progressItems={progressItems}
               loadingMessage={loadingMessage}
-              language={language}
-              taggingEnabled={isEnglish && taggingEnabled}
             />
           }
         />
         <Route
           path="/settings"
-          element={
-            <SettingsPage
-              language={language}
-              setLanguage={setLanguage}
-              whisperModel={whisperModel}
-              setWhisperModel={setWhisperModel}
-              semanticSearchEnabled={semanticSearchEnabled}
-              setSemanticSearchEnabled={setSemanticSearchEnabled}
-              taggingEnabled={taggingEnabled}
-              setTaggingEnabled={setTaggingEnabled}
-              isEnglish={isEnglish}
-              darkMode={darkMode}
-              setDarkMode={setDarkMode}
-            />
-          }
+          element={<SettingsPage />}
         />
         <Route
           path="/note/:id"
@@ -461,9 +395,11 @@ import { useParams } from 'react-router-dom';
 
 function App() {
   return (
-    <HashRouter>
-      <AppContent />
-    </HashRouter>
+    <SettingsProvider>
+      <HashRouter>
+        <AppContent />
+      </HashRouter>
+    </SettingsProvider>
   );
 }
 

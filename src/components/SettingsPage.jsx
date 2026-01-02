@@ -4,10 +4,11 @@
  * Settings screen with:
  * - Language selection for Whisper transcription
  * - Model size selection for accuracy vs speed tradeoff
- * - Persists settings to localStorage
+ * - Settings managed via SettingsContext
  */
 
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '../contexts/SettingsContext';
 import './SettingsPage.css';
 
 // List of supported languages:
@@ -140,20 +141,23 @@ const WHISPER_MODELS = {
     },
 };
 
-export function SettingsPage({
-    language,
-    setLanguage,
-    whisperModel,
-    setWhisperModel,
-    semanticSearchEnabled,
-    setSemanticSearchEnabled,
-    taggingEnabled,
-    setTaggingEnabled,
-    isEnglish,
-    darkMode,
-    setDarkMode
-}) {
+export function SettingsPage() {
     const navigate = useNavigate();
+
+    // Get all settings from context
+    const {
+        language,
+        setLanguage,
+        whisperModel,
+        setWhisperModel,
+        semanticSearchEnabled,
+        setSemanticSearchEnabled,
+        taggingEnabled,
+        setTaggingEnabled,
+        darkMode,
+        setDarkMode,
+        isEnglish,
+    } = useSettings();
 
     const handleLanguageChange = (e) => {
         setLanguage(e.target.value);
