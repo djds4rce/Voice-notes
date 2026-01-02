@@ -10,17 +10,20 @@
 /**
  * Detect if running on an Apple device (iOS, iPadOS, or macOS Safari)
  * These devices have known WebGPU memory leak issues with transformers.js v3.
+ * Works in both main thread (window) and Web Worker (self) contexts.
  * 
  * @returns {boolean} True if on an Apple device with Safari/WebKit
  */
 export function isAppleDevice() {
-    if (typeof navigator === 'undefined') return false;
+    // Use globalThis to work in both main thread and worker contexts
+    const nav = globalThis.navigator;
+    if (!nav) return false;
 
-    const ua = navigator.userAgent;
+    const ua = nav.userAgent || '';
 
     // Check for iOS/iPadOS
-    const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
-
+    // Note: We avoid checking window.MSStream as window is not available in Web Workers
+    const isIOS = /iPad|iPhone|iPod/.test(ua);
 
     return isIOS;
 }
@@ -35,11 +38,16 @@ export function isAppleDevice() {
  */
 export function getRecommendedDevice(usingLegacy = null) {
     // Check localStorage override first (for testing)
-    if (typeof localStorage !== 'undefined') {
-        const override = localStorage.getItem('ml-device-override');
-        if (override === 'webgpu' || override === 'wasm') {
-            return override;
+    // Note: localStorage is not available in Web Workers, so we use try/catch
+    try {
+        if (typeof localStorage !== 'undefined') {
+            const override = localStorage.getItem('ml-device-override');
+            if (override === 'webgpu' || override === 'wasm') {
+                return override;
+            }
         }
+    } catch {
+        // localStorage not available (e.g., in Web Worker)
     }
 
     // Legacy transformers.js v2 only supports WASM
