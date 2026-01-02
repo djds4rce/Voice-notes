@@ -282,8 +282,11 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                         finalDataResolveRef.current();
                         finalDataResolveRef.current = null;
                     } else {
-                        // Only auto-process if not stopping
-                        processAudioChunks();
+                        // Only auto-process if not stopping AND not on iOS
+                        // iOS uses batch transcription at the end to avoid memory issues
+                        if (!IS_IOS) {
+                            processAudioChunks();
+                        }
                     }
                 }
             };
@@ -394,8 +397,14 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
 
                 let audioToProcess = allAudio;
                 let audioWindowStart = 0;
+                let batchMode = false;
 
-                if (audioToProcess.length > MAX_SAMPLES) {
+                if (IS_IOS) {
+                    // iOS: Send full audio for batch transcription (no live transcription was done)
+                    batchMode = true;
+                    // audioToProcess stays as allAudio - send everything
+                } else if (audioToProcess.length > MAX_SAMPLES) {
+                    // Desktop: Only send remaining window (live transcription already handled earlier chunks)
                     const excessSamples = audioToProcess.length - MAX_SAMPLES;
                     const numShifts = Math.ceil(excessSamples / WINDOW_SHIFT_SAMPLES);
                     const samplesToSkip = numShifts * WINDOW_SHIFT_SAMPLES;
@@ -404,22 +413,31 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 }
 
                 // Set up promise to wait for finalization
+                // iOS batch mode needs much longer timeout - WASM is slow
+                const timeoutMs = batchMode ? 300000 : 30000; // 5 minutes for iOS, 30s for desktop
                 const finalizationPromise = new Promise((resolve) => {
                     finalizationResolveRef.current = resolve;
                     setTimeout(() => {
                         if (finalizationResolveRef.current) {
-                            console.log('[RecordingScreen] Timeout on finalize');
+                            console.warn('[RecordingScreen] Finalize timeout reached after', timeoutMs / 1000, 'seconds');
+                            // Still resolve to prevent hanging forever, but transcript may be incomplete
                             finalizationResolveRef.current();
                             finalizationResolveRef.current = null;
                         }
-                    }, 20000); // Longer timeout for finalize (topic gen can be slow)
+                    }, timeoutMs);
                 });
 
                 // Send finalize message - this will wait for any in-progress work,
                 // process the audio, and commit all remaining tentative text
                 worker?.postMessage({
                     type: 'finalize',
-                    data: { audio: audioToProcess, language, audioWindowStart, taggingEnabled: isEnglish && taggingEnabled },
+                    data: {
+                        audio: audioToProcess,
+                        language,
+                        audioWindowStart,
+                        taggingEnabled: isEnglish && taggingEnabled,
+                        batchMode, // iOS: transcribe full audio in chunks
+                    },
                 });
 
                 // Wait for finalization to complete
@@ -596,8 +614,12 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                         </svg>
                     </div>
                 </div>
-                <h2 className="saving-title">Scribbling down your thoughts...</h2>
-                <p className="saving-subtitle">Just a moment</p>
+                <h2 className="saving-title">
+                    {loadingMessage || 'Scribbling down your thoughts...'}
+                </h2>
+                <p className="saving-subtitle">
+                    {IS_IOS && loadingMessage ? 'This may take a moment on mobile' : 'Just a moment'}
+                </p>
                 <button className="cancel-button" onClick={cancelRecording}>
                     <span className="cancel-icon">×</span>
                     Cancel

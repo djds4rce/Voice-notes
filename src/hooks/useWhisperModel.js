@@ -85,6 +85,14 @@ export function useWhisperModel() {
 
                 case 'ready':
                     setStatus('ready');
+                    setLoadingMessage(''); // Clear any loading message
+                    break;
+
+                case 'complete':
+                case 'finalized':
+                    // After transcription completes, reset to ready state
+                    setStatus('ready');
+                    setLoadingMessage('');
                     break;
 
                 case 'error':
