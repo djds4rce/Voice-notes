@@ -16,14 +16,25 @@ import { TopicGenerator } from "./TopicGenerator.js";
 // ===== DEVICE DETECTION (Worker Context) =====
 
 /**
- * Detect if running on an Apple device (iOS/macOS Safari)
+ * Detect if running on an iOS/iPadOS device
  * Works in Web Worker context using self.navigator
+ * 
+ * NOTE: iPadOS 13+ reports as 'Macintosh' to get desktop sites
+ * We detect this via maxTouchPoints (iPad has touch, Mac desktop doesn't)
  */
 function isAppleDevice() {
   const ua = self.navigator?.userAgent || '';
+
+  // Classic iOS detection
   const isIOS = /iPad|iPhone|iPod/.test(ua);
-  const isMacSafari = /Macintosh/.test(ua) && /Safari/.test(ua) && !/Chrome|Firefox|Edg/.test(ua);
-  return isIOS || isMacSafari;
+  if (isIOS) return true;
+
+  // Modern iPadOS (13+) detection - reports as Mac but has touch
+  const isMac = /Macintosh/.test(ua);
+  const hasTouch = self.navigator?.maxTouchPoints > 1;
+  if (isMac && hasTouch) return true; // This is an iPad pretending to be a Mac
+
+  return false; // Not iOS - use WebGPU
 }
 
 /**
@@ -135,11 +146,12 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
     currentDevice = targetDevice;
 
     // Skip warmup on iOS - not needed for WASM and can cause memory crashes
+    const deviceType = isAppleDevice() ? 'iOS/Apple' : 'Desktop';
     if (!isAppleDevice()) {
-      self.postMessage({ status: "loading", data: "Compiling shaders and warming up..." });
+      self.postMessage({ status: "loading", data: `Compiling shaders and warming up... (${targetDevice.toUpperCase()})` });
       await transcriber.warmup();
     } else {
-      self.postMessage({ status: "loading", data: "Model ready..." });
+      self.postMessage({ status: "loading", data: `Model ready (${targetDevice.toUpperCase()} - ${deviceType})` });
     }
 
     if (taggingEnabled) {

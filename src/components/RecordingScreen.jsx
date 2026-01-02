@@ -12,6 +12,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
+import { DEVICE, IS_IOS } from '../hooks/useWhisperModel';
 import Progress from './Progress';
 import './RecordingScreen.css';
 
@@ -572,6 +573,9 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                             ))}
                         </div>
                     )}
+                    <div className="device-badge">
+                        {DEVICE.toUpperCase()} {IS_IOS ? '(iOS)' : ''}
+                    </div>
                     <button className="cancel-button model-cancel" onClick={() => navigate('/')}>
                         Cancel
                     </button>
@@ -611,7 +615,9 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     <span className="recording-dot"></span>
                     LISTENING...
                 </div>
-                <div className="header-spacer"></div>
+                <div className="device-badge small">
+                    {DEVICE.toUpperCase()}
+                </div>
             </div>
 
             {/* Timer */}

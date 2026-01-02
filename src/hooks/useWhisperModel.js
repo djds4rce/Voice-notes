@@ -10,15 +10,19 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSettings } from '../contexts/SettingsContext';
+import { isAppleDevice } from '../utils/deviceDetection';
 
 // Check WebGPU availability
 const IS_WEBGPU_AVAILABLE = !!navigator.gpu;
 
+// Detect iOS/iPadOS devices
+export const IS_IOS = isAppleDevice();
+
 // Check for localStorage override to force WASM mode (for testing)
 const forceWasm = localStorage.getItem('force-wasm') === 'true';
 
-// Determine device: respect override, otherwise detect capability
-export const DEVICE = (IS_WEBGPU_AVAILABLE && !forceWasm) ? "webgpu" : "wasm";
+// Determine device: iOS always uses WASM, otherwise respect override or detect capability
+export const DEVICE = IS_IOS ? "wasm" : ((IS_WEBGPU_AVAILABLE && !forceWasm) ? "webgpu" : "wasm");
 
 export function useWhisperModel() {
     // Worker reference for Whisper transcription

@@ -8,11 +8,14 @@
  */
 
 /**
- * Detect if running on an Apple device (iOS, iPadOS, or macOS Safari)
- * These devices have known WebGPU memory leak issues with transformers.js v3.
+ * Detect if running on an iOS/iPadOS device
+ * These devices have known issues with transformers.js v3 and should use WASM.
  * Works in both main thread (window) and Web Worker (self) contexts.
  * 
- * @returns {boolean} True if on an Apple device with Safari/WebKit
+ * NOTE: iPadOS 13+ reports as 'Macintosh' to get desktop sites.
+ * We detect this via maxTouchPoints (iPad has touch, Mac desktop doesn't).
+ * 
+ * @returns {boolean} True if on an iOS/iPadOS device
  */
 export function isAppleDevice() {
     // Use globalThis to work in both main thread and worker contexts
@@ -21,11 +24,17 @@ export function isAppleDevice() {
 
     const ua = nav.userAgent || '';
 
-    // Check for iOS/iPadOS
-    // Note: We avoid checking window.MSStream as window is not available in Web Workers
+    // Classic iOS detection (iPhone, iPad with old iOS, iPod)
     const isIOS = /iPad|iPhone|iPod/.test(ua);
+    if (isIOS) return true;
 
-    return isIOS;
+    // Modern iPadOS (13+) detection - reports as Mac but has touch
+    // navigator.maxTouchPoints > 1 indicates a touch device (iPad)
+    const isMac = /Macintosh/.test(ua);
+    const hasTouch = nav.maxTouchPoints > 1;
+    if (isMac && hasTouch) return true; // This is an iPad pretending to be a Mac
+
+    return false; // Not iOS - use WebGPU
 }
 
 /**
