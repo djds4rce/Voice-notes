@@ -333,22 +333,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
         setRecording(false);
         setIsSaving(true);
 
-        // Wait for any in-progress transcription to complete first
-        if (isProcessing) {
-            console.log('[RecordingScreen] Waiting for in-progress transcription...');
-            await new Promise((resolve) => {
-                finalProcessingResolveRef.current = resolve;
-                setTimeout(() => {
-                    if (finalProcessingResolveRef.current) {
-                        console.log('[RecordingScreen] Timeout waiting for in-progress transcription');
-                        finalProcessingResolveRef.current();
-                        finalProcessingResolveRef.current = null;
-                    }
-                }, 10000);
-            });
-        }
-
-        // Set up promise to wait for final data before stopping
+        // FIRST: Stop MediaRecorder immediately to stop capturing audio
         let finalDataPromise = null;
         if (recorderRef.current?.state === 'recording') {
             finalDataPromise = new Promise((resolve) => {
@@ -368,6 +353,11 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             recorderRef.current.stop();
         }
 
+        // SECOND: Stop stream to turn off microphone indicator
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+        }
+
         // Wait for final data to arrive
         if (finalDataPromise) {
             console.log('[RecordingScreen] Waiting for final data chunk...');
@@ -375,9 +365,19 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             console.log('[RecordingScreen] Final data chunk received');
         }
 
-        // Stop stream AFTER getting final data (iOS needs stream active for MediaRecorder)
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach(track => track.stop());
+        // THIRD: Wait for any in-progress transcription to complete
+        if (isProcessing) {
+            console.log('[RecordingScreen] Waiting for in-progress transcription...');
+            await new Promise((resolve) => {
+                finalProcessingResolveRef.current = resolve;
+                setTimeout(() => {
+                    if (finalProcessingResolveRef.current) {
+                        console.log('[RecordingScreen] Timeout waiting for in-progress transcription');
+                        finalProcessingResolveRef.current();
+                        finalProcessingResolveRef.current = null;
+                    }
+                }, 10000);
+            });
         }
 
         // Now send finalize message to process any remaining audio and commit all tentative text
