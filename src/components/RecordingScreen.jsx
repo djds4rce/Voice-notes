@@ -142,6 +142,12 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     setIsProcessing(false);
                     const { committed, committedChunks: chunks } = e.data;
                     console.log('[RecordingScreen] Received finalized signal, committed:', committed?.substring(0, 50) + '...');
+
+                    // Show error alert if transcription failed
+                    if (e.data.error) {
+                        alert(`Transcription Error: ${e.data.error}`);
+                    }
+
                     // Update refs with final values
                     if (committed) {
                         committedTextRef.current = committed;
