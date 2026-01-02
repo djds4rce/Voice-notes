@@ -1,10 +1,8 @@
 
-import { pipeline, env } from "@huggingface/transformers";
+import { getTransformers, isUsingLegacyTransformers } from "./utils/transformerLoader.js";
 import { getRecommendedDevice } from "./utils/deviceDetection.js";
 
-// Skip local checks for better browser/worker compatibility in some environments
-env.allowLocalModels = false;
-env.useBrowserCache = true;
+// env configuration is set after dynamic import in init()
 
 // Using SmolLM2-360M-Instruct as a high-quality, non-gated alternative to Gemma 270M
 // which currently requires authentication/gating even for ONNX versions.
@@ -45,7 +43,9 @@ export class TopicGenerator {
     static currentDevice = null;
 
     static async getInstance(progressCallback = null, device = null) {
-        const targetDevice = device || getRecommendedDevice();
+        // Check if using legacy transformers for proper device selection
+        const isLegacy = isUsingLegacyTransformers();
+        const targetDevice = device || getRecommendedDevice(isLegacy);
 
         // If device changed, reset instance
         if (TopicGenerator.instance && TopicGenerator.currentDevice !== targetDevice) {
@@ -69,11 +69,18 @@ export class TopicGenerator {
     }
 
     async init(progressCallback, device = "webgpu") {
+        // Load the appropriate transformers.js version (v2 for iOS, v3 for others)
+        const { pipeline, env } = await getTransformers();
+
+        // Configure environment after dynamic import
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+
         // Get device-specific configuration (proactive, no fallback needed)
         const config = PER_DEVICE_CONFIG[device] || PER_DEVICE_CONFIG.wasm;
         this.device = device;
 
-
+        // Note: v2 ignores device/dtype options gracefully (uses WASM with default quantization)
         this.generator = await pipeline("text-generation", this.modelId, {
             dtype: config.dtype,
             device: config.device,

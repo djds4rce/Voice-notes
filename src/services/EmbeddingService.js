@@ -5,11 +5,11 @@
  * Uses all-MiniLM-L6-v2 which produces 384-dimensional vectors.
  * Loads lazily on first use to avoid blocking initial app load.
  * 
- * Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
+ * Note: On Apple devices (iOS/macOS Safari), we use transformers.js v2 to avoid memory leaks.
  * @see https://github.com/huggingface/transformers.js/issues/1242
  */
 
-import { pipeline } from '@huggingface/transformers';
+import { getTransformers, isUsingLegacyTransformers } from '../utils/transformerLoader.js';
 import { getRecommendedDevice } from '../utils/deviceDetection.js';
 
 /**
@@ -39,7 +39,9 @@ class EmbeddingService {
     static MODEL_ID = 'Xenova/all-MiniLM-L6-v2';
 
     static async getInstance(progressCallback = null, device = null) {
-        const targetDevice = device || getRecommendedDevice();
+        // Check if using legacy transformers for proper device selection
+        const isLegacy = isUsingLegacyTransformers();
+        const targetDevice = device || getRecommendedDevice(isLegacy);
 
         // If device changed, reset instance
         if (this.instance && this.currentDevice !== targetDevice) {
@@ -56,7 +58,10 @@ class EmbeddingService {
     }
 
     async load(progressCallback = null, device = null) {
-        const targetDevice = device || getRecommendedDevice();
+        // Check if using legacy transformers for proper device selection
+        const isLegacy = isUsingLegacyTransformers();
+        const targetDevice = device || getRecommendedDevice(isLegacy);
+
         // If already loaded with same device, return
         if (this.embedder && this.device === targetDevice) return;
 
@@ -73,9 +78,13 @@ class EmbeddingService {
         this.loading = true;
         this.device = targetDevice;
 
+        // Load the appropriate transformers.js version (v2 for iOS, v3 for others)
+        const { pipeline } = await getTransformers();
+
         // Get device-specific configuration
         const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
 
+        // Note: v2 ignores device/dtype options gracefully (uses WASM with default quantization)
         this.loadPromise = pipeline('feature-extraction', EmbeddingService.MODEL_ID, {
             dtype: config.dtype,
             device: config.device,

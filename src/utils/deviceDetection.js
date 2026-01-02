@@ -28,16 +28,23 @@ export function isAppleDevice() {
 /**
  * Get the recommended ML device based on platform
  * Forces WASM on Apple devices to avoid WebGPU memory leaks.
+ * Also forces WASM when using legacy transformers.js v2 (which doesn't support WebGPU).
  * 
+ * @param {boolean} [usingLegacy] - Whether we're using legacy transformers.js v2
  * @returns {"webgpu" | "wasm"} The device to use for ML models
  */
-export function getRecommendedDevice() {
+export function getRecommendedDevice(usingLegacy = null) {
     // Check localStorage override first (for testing)
     if (typeof localStorage !== 'undefined') {
         const override = localStorage.getItem('ml-device-override');
         if (override === 'webgpu' || override === 'wasm') {
             return override;
         }
+    }
+
+    // Legacy transformers.js v2 only supports WASM
+    if (usingLegacy === true) {
+        return 'wasm';
     }
 
     return isAppleDevice() ? 'wasm' : 'webgpu';

@@ -1,4 +1,4 @@
-import { pipeline } from "@huggingface/transformers";
+import { getTransformers, isUsingLegacyTransformers } from "./utils/transformerLoader.js";
 import { getRecommendedDevice } from "./utils/deviceDetection.js";
 
 /**
@@ -46,8 +46,12 @@ export class WhisperTranscriber {
     }
 
     static async getInstance(progressCallback = null, modelId = null, device = null) {
+        // Load the appropriate transformers.js version (v2 for iOS, v3 for others)
+        const { pipeline } = await getTransformers();
+        const isLegacy = isUsingLegacyTransformers();
+
         const targetModel = modelId || this.DEFAULT_MODEL_ID;
-        const targetDevice = device || getRecommendedDevice();
+        const targetDevice = device || getRecommendedDevice(isLegacy);
 
         // If model or device changed, reset instance
         if (this.instance && (this.currentModelId !== targetModel || this.currentDevice !== targetDevice)) {
@@ -63,6 +67,7 @@ export class WhisperTranscriber {
         const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
 
         // Use pipeline API for automatic speech recognition with word-level timestamps support
+        // Note: v2 ignores device/dtype options gracefully (uses WASM with default quantization)
         const transcriber = await pipeline(
             "automatic-speech-recognition",
             targetModel,
