@@ -6,8 +6,12 @@
  */
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { isAppleDevice } from '../utils/deviceDetection';
 
 const SettingsContext = createContext(null);
+
+// iOS cannot handle whisper-medium due to memory constraints
+const IOS_INCOMPATIBLE_MODELS = ['Xenova/whisper-medium'];
 
 /**
  * SettingsProvider - Wraps the app to provide settings context
@@ -20,9 +24,18 @@ export function SettingsProvider({ children }) {
     });
 
     // Whisper model setting (persisted to localStorage)
+    // On iOS, validate that the model is compatible (downgrade if necessary)
     const [whisperModel, setWhisperModel] = useState(() => {
         const saved = localStorage.getItem('whisper-model');
-        return saved || 'Xenova/whisper-base';
+        const model = saved || 'Xenova/whisper-base';
+
+        // iOS validation: downgrade incompatible models to base
+        if (isAppleDevice() && IOS_INCOMPATIBLE_MODELS.includes(model)) {
+            console.warn(`[Settings] Model ${model} is not compatible with iOS, using whisper-base instead`);
+            return 'Xenova/whisper-base';
+        }
+
+        return model;
     });
 
     // Semantic search setting (only available for English)
