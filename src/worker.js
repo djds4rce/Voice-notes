@@ -343,56 +343,91 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         throw new Error(`All chunks failed: ${transcriptionErrors.join('; ')}`);
       }
 
-      // Process all chunks through agreement processor
-      agreementProcessor.process(allChunks, 0);
+      // BATCH MODE: Bypass LocalAgreementProcessor - it requires multiple iterations
+      // to confirm words via local agreement, which doesn't work for single-batch processing.
+      // Instead, directly use all transcribed chunks as committed text.
+      const batchCommittedText = allChunks.map(c => c.text).join(' ');
+
+      self.postMessage({
+        status: "update",
+        output: batchCommittedText,
+        committed: batchCommittedText,
+        tentative: "",
+        committedChunks: allChunks,
+        tps: 0,
+        numTokens: allChunks.length,
+      });
+
+      // --- TOPIC GENERATION (only if enabled) ---
+      let tags = [];
+      if (taggingEnabled) {
+        try {
+          if (batchCommittedText && batchCommittedText.length > 50) {
+            const topicGen = await TopicGenerator.getInstance((progress) => { });
+            tags = await topicGen.generateTags(batchCommittedText);
+          }
+        } catch (tagError) {
+          console.error("[Worker] Topic generation failed:", tagError);
+        }
+      }
+
+      self.postMessage({
+        status: "finalized",
+        output: batchCommittedText,
+        committed: batchCommittedText,
+        committedChunks: allChunks,
+        tags: tags
+      });
 
     } else if (audio && audio.length >= 8000) {
       // NORMAL MODE: Single transcription (for desktop live mode finalization)
       const { text, chunks, tps } = await transcriber.transcribe(audio, language);
       agreementProcessor.process(chunks, audioWindowStart);
-    }
 
-    // Finalize: commit all remaining tentative text
-    const result = agreementProcessor.finalize();
+      // Finalize: commit all remaining tentative text
+      const result = agreementProcessor.finalize();
 
-    self.postMessage({
-      status: "update",
-      output: result.committed,
-      committed: result.committed,
-      tentative: "",
-      committedChunks: agreementProcessor.getAllCommittedChunks(),
-      tps: 0,
-      numTokens: 0,
-    });
+      self.postMessage({
+        status: "update",
+        output: result.committed,
+        committed: result.committed,
+        tentative: "",
+        committedChunks: agreementProcessor.getAllCommittedChunks(),
+        tps: 0,
+        numTokens: 0,
+      });
 
-    // --- TOPIC GENERATION (only if enabled) ---
-    let tags = [];
-    if (taggingEnabled) {
-      try {
-        const finalText = result.committed;
-        if (finalText && finalText.length > 50) {
-          // Ensure generator is ready or load it
-          const topicGen = await TopicGenerator.getInstance((progress) => {
-            if (progress.status === "progress") {
-            }
-          });
-
-          tags = await topicGen.generateTags(finalText);
+      // --- TOPIC GENERATION (only if enabled) ---
+      let tags = [];
+      if (taggingEnabled) {
+        try {
+          const finalText = result.committed;
+          if (finalText && finalText.length > 50) {
+            const topicGen = await TopicGenerator.getInstance((progress) => { });
+            tags = await topicGen.generateTags(finalText);
+          }
+        } catch (tagError) {
+          console.error("[Worker] Topic generation failed:", tagError);
         }
-      } catch (tagError) {
-        console.error("[Worker] Topic generation failed:", tagError);
       }
-    } else {
-    }
-    // ------------------------
 
-    self.postMessage({
-      status: "finalized",
-      output: result.committed,
-      committed: result.committed,
-      committedChunks: agreementProcessor.getAllCommittedChunks(),
-      tags: tags
-    });
+      self.postMessage({
+        status: "finalized",
+        output: result.committed,
+        committed: result.committed,
+        committedChunks: agreementProcessor.getAllCommittedChunks(),
+        tags: tags
+      });
+    } else {
+      // No audio to process - send empty finalized
+      self.postMessage({
+        status: "finalized",
+        output: "",
+        committed: "",
+        committedChunks: [],
+        tags: []
+      });
+    }
 
   } catch (error) {
     console.error("Finalize error:", error);

@@ -476,8 +476,8 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 tags: tagsRef.current,
             });
         } else {
-            // Show alert if transcript is empty
-            alert('No transcript was generated. The recording was not saved. Please try again.');
+            // Show detailed alert for debugging on iOS
+            alert(`No transcript generated.\n\nDebug info:\n- committedText: "${committedTextRef.current?.substring(0, 30) || '(empty)'}"\n- tentativeText: "${tentativeTextRef.current?.substring(0, 30) || '(empty)'}"\n- audioChunks: ${chunksRef.current?.length || 0}\n- duration: ${elapsedTime}s`);
         }
 
         setIsSaving(false);
