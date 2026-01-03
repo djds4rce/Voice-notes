@@ -6,13 +6,13 @@
  * - Transcript preview with optional highlighting
  * - Duration badge
  * - Timestamp
- * - Quick play button
  * - Matched words and similarity score (for search results)
  */
 
+import { downloadNoteZip } from '../utils/DownloadUtils';
 import './NoteCard.css';
 
-export function NoteCard({ note, onClick, onPlay, onDelete, showMatchInfo = false }) {
+export function NoteCard({ note, onClick, onDelete, showMatchInfo = false }) {
     // Format duration as MM:SS min
     const formatDuration = (seconds) => {
         if (!seconds) return '0:00 min';
@@ -113,15 +113,22 @@ export function NoteCard({ note, onClick, onPlay, onDelete, showMatchInfo = fals
         return Math.round(similarity * 100);
     };
 
-    const handlePlayClick = (e) => {
-        e.stopPropagation();
-        onPlay?.();
-    };
+
 
     const handleDeleteClick = (e) => {
         e.stopPropagation();
         if (window.confirm('Delete this voice note?')) {
             onDelete?.();
+        }
+    };
+
+    const handleDownloadClick = async (e) => {
+        e.stopPropagation();
+        try {
+            await downloadNoteZip(note.id, note.title);
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('Failed to download note. Please try again.');
         }
     };
 
@@ -176,12 +183,15 @@ export function NoteCard({ note, onClick, onPlay, onDelete, showMatchInfo = fals
 
                     <div className="note-card-actions">
                         <button
-                            className="play-button"
-                            onClick={handlePlayClick}
-                            aria-label="Play note"
+                            className="download-button"
+                            onClick={handleDownloadClick}
+                            aria-label="Download note"
+                            title="Download zip"
                         >
-                            <svg viewBox="0 0 24 24" fill="currentColor">
-                                <polygon points="5 3 19 12 5 21 5 3" />
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
                             </svg>
                         </button>
                         <button

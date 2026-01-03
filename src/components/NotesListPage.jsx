@@ -19,7 +19,6 @@ import './NotesListPage.css';
 export function NotesListPage({
     notes,
     onDeleteNote,
-    onPlayNote,
     onSemanticSearch,
     onKeywordSearch,
     semanticSearchEnabled = true,
@@ -397,7 +396,6 @@ export function NotesListPage({
                                                         similarity: note.similarity
                                                     }}
                                                     showMatchInfo={hasSearched}
-                                                    onPlay={() => onPlayNote?.(note)}
                                                     onDelete={() => onDeleteNote?.(note.id)}
                                                     onClick={() => navigate(`/note/${note.id}`)}
                                                 />
@@ -423,7 +421,6 @@ export function NotesListPage({
                                                         similarity: note.similarity
                                                     }}
                                                     showMatchInfo={hasSearched}
-                                                    onPlay={() => onPlayNote?.(note)}
                                                     onDelete={() => onDeleteNote?.(note.id)}
                                                     onClick={() => navigate(`/note/${note.id}`)}
                                                 />
@@ -449,7 +446,6 @@ export function NotesListPage({
                                                         similarity: note.similarity
                                                     }}
                                                     showMatchInfo={hasSearched}
-                                                    onPlay={() => onPlayNote?.(note)}
                                                     onDelete={() => onDeleteNote?.(note.id)}
                                                     onClick={() => navigate(`/note/${note.id}`)}
                                                 />

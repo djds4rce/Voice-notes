@@ -39,6 +39,38 @@
     transform: translate(1px, 1px);
 }
 
+.download-button-large {
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
+    border-radius: 50px 60px 45px 55px / 60px 45px 55px 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-hand-sm);
+    transition: all 0.1s ease;
+}
+
+.download-button-large:hover {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
+    transform: translate(1px, 1px);
+}
+
+.download-button-large svg {
+    width: 20px;
+    height: 20px;
+    color: var(--color-pencil);
+    stroke-width: 2.5;
+}
+
+.download-button-large:hover svg {
+    color: white;
+}
+
 .back-button svg {
     width: 24px;
     height: 24px;

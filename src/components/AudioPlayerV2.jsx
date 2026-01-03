@@ -13,6 +13,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { downloadNoteZip } from '../utils/DownloadUtils';
 import './AudioPlayer.css';
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -351,6 +352,15 @@ export function AudioPlayerV2({ note, onClose }) {
         }
     };
 
+    const handleDownloadClick = async () => {
+        try {
+            await downloadNoteZip(note.id, note.title);
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('Failed to download note. Please try again.');
+        }
+    };
+
     // Format timestamp for display
     const formatTimestamp = (dateStr) => {
         if (!dateStr) return '';
@@ -416,7 +426,19 @@ export function AudioPlayerV2({ note, onClose }) {
                 </div>
 
                 {/* Spacer for header balance */}
-                <div style={{ width: 44 }} />
+                {/* Download Button */}
+                <button
+                    className="download-button-large"
+                    onClick={handleDownloadClick}
+                    title="Download zip"
+                    aria-label="Download note"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                </button>
             </header>
 
             {/* Content Area */}

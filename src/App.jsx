@@ -193,14 +193,6 @@ function AppContent() {
     }
   }, [db, notes, handleKeywordSearch]);
 
-  // Play note audio
-  const handlePlayNote = useCallback(async (note) => {
-    const noteWithAudio = await getNoteWithAudio(note.id);
-    if (noteWithAudio) {
-      navigate(`/note/${note.id}`, { state: { autoplay: true } });
-    }
-  }, [getNoteWithAudio, navigate]);
-
   // WebGPU block removed - app now works with WASM fallback
 
   // Main app routes
@@ -217,7 +209,6 @@ function AppContent() {
             <NotesListPage
               notes={notes}
               onDeleteNote={handleDeleteNote}
-              onPlayNote={handlePlayNote}
               onSemanticSearch={handleSemanticSearch}
               onKeywordSearch={handleKeywordSearch}
               semanticSearchEnabled={isEnglish && semanticSearchEnabled}
@@ -227,10 +218,10 @@ function AppContent() {
             />
           }
         />
-        <Route
+        < Route
           path="/record"
           element={
-            <RecordingScreen
+            < RecordingScreen
               worker={worker.current}
               onSaveNote={handleSaveNote}
               whisperStatus={status}
@@ -239,14 +230,14 @@ function AppContent() {
             />
           }
         />
-        <Route
+        < Route
           path="/settings"
-          element={<SettingsPage />}
+          element={< SettingsPage />}
         />
-        <Route
+        < Route
           path="/upload"
           element={
-            <UploadScreen
+            < UploadScreen
               worker={worker.current}
               onSaveNote={handleSaveNote}
               whisperStatus={status}
@@ -255,10 +246,10 @@ function AppContent() {
             />
           }
         />
-        <Route
+        < Route
           path="/note/:id"
           element={
-            <NoteDetailPage
+            < NoteDetailPage
               getNoteWithAudio={getNoteWithAudio}
               currentNote={currentNote}
             />
@@ -269,8 +260,8 @@ function AppContent() {
           path="/search"
           element={<Navigate to="/notes" replace />}
         />
-      </Routes>
-    </div>
+      </Routes >
+    </div >
   );
 }
 

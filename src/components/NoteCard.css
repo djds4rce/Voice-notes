@@ -235,6 +235,37 @@ mark.highlight {
     color: white;
 }
 
+/* Download Button */
+.download-button {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--color-pencil);
+    background: var(--color-card);
+    border-radius: 60px 45px 55px 50px / 50px 60px 45px 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-hand-sm);
+    transition: all 0.1s ease;
+}
+
+.download-button:hover {
+    background: var(--color-blue-pen);
+    box-shadow: 1px 1px 0px 0px var(--color-pencil);
+    transform: translate(1px, 1px);
+}
+
+.download-button svg {
+    width: 16px;
+    height: 16px;
+    color: var(--color-pencil);
+}
+
+.download-button:hover svg {
+    color: white;
+}
+
 /* Delete Button */
 .delete-button {
     width: 40px;
