@@ -9,11 +9,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
-import { isAppleDevice } from '../utils/deviceDetection';
 import './SettingsPage.css';
-
-// Check if we're on iOS (for model restrictions)
-const IS_IOS = isAppleDevice();
 
 // List of supported languages:
 // https://help.openai.com/en/articles/7031512-whisper-api-faq
@@ -222,11 +218,10 @@ export function SettingsPage() {
                         </div>
                         <div className="model-options">
                             {Object.entries(WHISPER_MODELS).map(([modelId, model]) => {
-                                const isDisabled = IS_IOS && !model.iosCompatible;
                                 return (
                                     <label
                                         key={modelId}
-                                        className={`model-option ${whisperModel === modelId ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                        className={`model-option ${whisperModel === modelId ? 'selected' : ''}`}
                                     >
                                         <input
                                             type="radio"
@@ -234,7 +229,6 @@ export function SettingsPage() {
                                             value={modelId}
                                             checked={whisperModel === modelId}
                                             onChange={handleModelChange}
-                                            disabled={isDisabled}
                                         />
                                         <div className="model-option-content">
                                             <span className="model-name">{model.name}</span>
