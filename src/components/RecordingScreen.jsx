@@ -287,12 +287,17 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     if (finalDataResolveRef.current) {
                         finalDataResolveRef.current();
                         finalDataResolveRef.current = null;
+                    } else if (IS_IOS) {
+                        // iOS: Skip live transcription but keep collecting audio chunks
+                        // Schedule next data request to accumulate chunks
+                        setTimeout(() => {
+                            if (recorderRef.current?.state === 'recording') {
+                                recorderRef.current.requestData();
+                            }
+                        }, 1000); // Request data every 1 second on iOS
                     } else {
-                        // Only auto-process if not stopping AND not on iOS
-                        // iOS uses batch transcription at the end to avoid memory issues
-                        if (!IS_IOS) {
-                            processAudioChunks();
-                        }
+                        // Desktop: Process chunks for live transcription
+                        processAudioChunks();
                     }
                 }
             };

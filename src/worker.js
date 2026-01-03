@@ -379,12 +379,18 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         tags: tags
       });
 
-    } else if (audio && audio.length >= 8000) {
-      // NORMAL MODE: Single transcription (for desktop live mode finalization)
-      const { text, chunks, tps } = await transcriber.transcribe(audio, language);
-      agreementProcessor.process(chunks, audioWindowStart);
+    } else {
+      // NORMAL MODE: Desktop with live transcription
+      // Live transcription already processed audio during recording via handleGenerate
+      // Here we just process any remaining audio and finalize the agreementProcessor
 
-      // Finalize: commit all remaining tentative text
+      if (audio && audio.length >= 8000) {
+        // Process final audio chunk through normal pipeline
+        const { text, chunks, tps } = await transcriber.transcribe(audio, language);
+        agreementProcessor.process(chunks, audioWindowStart);
+      }
+
+      // Finalize: commit all remaining tentative text from live transcription
       const result = agreementProcessor.finalize();
 
       self.postMessage({
@@ -417,15 +423,6 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         committed: result.committed,
         committedChunks: agreementProcessor.getAllCommittedChunks(),
         tags: tags
-      });
-    } else {
-      // No audio to process - send empty finalized
-      self.postMessage({
-        status: "finalized",
-        output: "",
-        committed: "",
-        committedChunks: [],
-        tags: []
       });
     }
 

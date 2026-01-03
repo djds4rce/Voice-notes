@@ -85,11 +85,19 @@ export class WhisperTranscriber {
     }
 
     async warmup() {
-        // Warmup with a tiny audio sample
-        const dummyAudio = new Float32Array(16000); // 1 second of silence
-        await this.transcriber(dummyAudio, {
-            return_timestamps: false,
-        });
+        // Warmup with multiple passes to fully compile WebGPU shaders
+        // Different audio lengths exercise different codepaths
+        console.log('[Whisper] Starting warmup...');
+
+        // Pass 1: Short audio (1 second)
+        const shortAudio = new Float32Array(16000); // 1 second of silence
+        await this.transcriber(shortAudio, { return_timestamps: false });
+
+        // Pass 2: Longer audio (3 seconds) - exercises more attention layers
+        const longAudio = new Float32Array(16000 * 3); // 3 seconds
+        await this.transcriber(longAudio, { return_timestamps: 'word' });
+
+        console.log('[Whisper] Warmup complete');
     }
 
     /**
