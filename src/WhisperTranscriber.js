@@ -101,7 +101,7 @@ export class WhisperTranscriber {
     }
 
     /**
-     * Transcribe audio to text with word-level timestamps
+     * Transcribe audio to text with word-level timestamps (WebGPU / Live Recording)
      * @param {Float32Array} audio - Audio samples at 16kHz
      * @param {string} language - Language code (e.g., "en") - ignored for English-only models
      * @returns {Promise<{text: string, chunks: Array<{text: string, start: number, end: number}>, tps: number}>}
@@ -131,19 +131,56 @@ export class WhisperTranscriber {
             result = await this.transcriber(audio, fallbackOptions);
         }
 
+        return this._processResult(result, startTime, hasWordTimestamps);
+    }
+
+    /**
+     * Transcribe full audio with sliding window (iOS / Batch Mode)
+     * Matches the demo implementation for long-form audio.
+     * @param {Float32Array} audio - Full audio samples at 16kHz
+     * @param {string} language - Language code
+     */
+    async transcribeFull(audio, language) {
+        const startTime = performance.now();
+
+        let result;
+        let hasWordTimestamps = false;
+        const isEnglishOnlyModel = WhisperTranscriber.currentModelId?.endsWith('.en');
+
+        // Options specifically for long-form audio (demo-style)
+        const options = {
+            return_timestamps: "word",
+            chunk_length_s: 30,
+            stride_length_s: 5,
+            ...(isEnglishOnlyModel ? {} : { language }),
+        };
+
+        try {
+            result = await this.transcriber(audio, options);
+            hasWordTimestamps = result.chunks && result.chunks.length > 0;
+        } catch (e) {
+            console.warn("[Whisper] Word timestamps not supported in full mode, falling back:", e.message);
+            const fallbackOptions = {
+                ...options,
+                return_timestamps: true
+            };
+            result = await this.transcriber(audio, fallbackOptions);
+        }
+
+        return this._processResult(result, startTime, hasWordTimestamps);
+    }
+
+    _processResult(result, startTime, hasWordTimestamps) {
         const endTime = performance.now();
         const duration = (endTime - startTime) / 1000;
 
         // Regex to match special tokens that should be filtered out
-        // Matches: [BLANK_AUDIO], [music], (upbeat music), [laughter], etc.
         const specialTokenRegex = /^\s*[\[\(][^\]\)]*[\]\)]\s*$/i;
 
         // Helper to check if text is a real word (not a special token)
         const isRealWord = (text) => {
             if (!text || text.trim().length === 0) return false;
-            // Filter out special tokens in brackets or parentheses
             if (specialTokenRegex.test(text)) return false;
-            // Filter out single punctuation or special characters
             if (/^[^\w]+$/.test(text)) return false;
             return true;
         };
@@ -151,8 +188,8 @@ export class WhisperTranscriber {
         // Clean up text - remove all special tokens
         let text = result.text || "";
         text = text
-            .replace(/\[[^\]]*\]/g, "")  // Remove [anything]
-            .replace(/\([^)]*\)/g, "")   // Remove (anything) 
+            .replace(/\[[^\]]*\]/g, "")
+            .replace(/\([^)]*\)/g, "")
             .replace(/\s+/g, " ")
             .trim();
 

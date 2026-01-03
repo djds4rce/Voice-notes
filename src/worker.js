@@ -280,82 +280,24 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
 
   try {
     if (batchMode && audio && audio.length >= 8000) {
-      // iOS BATCH MODE: Transcribe entire audio in 30-second chunks
-      // This is used when live transcription was skipped to avoid memory issues
-      const CHUNK_SIZE = 16000 * 30; // 30 seconds at 16kHz
-      const OVERLAP = 16000 * 5; // 5 seconds overlap for better continuity
+      // iOS BATCH MODE: Transcribe entire audio using Transformers.js built-in chunking
+      // This matches the demo implementation behavior
 
-      let allChunks = [];
-      let position = 0;
-      let chunkIndex = 0;
-      let lastProcessedTime = 0; // Track where we left off to avoid duplicates
-      let transcriptionErrors = [];
+      self.postMessage({ status: "loading", data: "Transcribing audio..." });
 
-      while (position < audio.length) {
-        const endPosition = Math.min(position + CHUNK_SIZE, audio.length);
-        const audioChunk = audio.slice(position, endPosition);
+      const { text, chunks, tps } = await transcriber.transcribeFull(audio, language);
 
-        // Only process if chunk is at least 0.5 seconds
-        if (audioChunk.length >= 8000) {
-          const chunkStartTime = position / 16000;
-
-          try {
-            const { text, chunks, tps } = await transcriber.transcribe(audioChunk, language);
-
-            // Adjust chunk timestamps to absolute position and filter out overlap duplicates
-            const adjustedChunks = chunks
-              .map(c => ({
-                ...c,
-                start: c.start + chunkStartTime,
-                end: c.end + chunkStartTime,
-              }))
-              .filter(c => c.start >= lastProcessedTime); // Only keep words after last processed time
-
-            allChunks = allChunks.concat(adjustedChunks);
-
-            // Update last processed time to the end of this chunk's content
-            if (adjustedChunks.length > 0) {
-              lastProcessedTime = adjustedChunks[adjustedChunks.length - 1].end;
-            }
-          } catch (chunkError) {
-            console.error(`[Worker] Error transcribing chunk ${chunkIndex}:`, chunkError);
-            transcriptionErrors.push(`Chunk ${chunkIndex}: ${chunkError.message}`);
-          }
-
-          chunkIndex++;
-
-          // Send progress update
-          self.postMessage({
-            status: "loading",
-            data: `Transcribing... (${Math.min(100, Math.round((endPosition / audio.length) * 100))}%)`
-          });
-        }
-
-        // Move to next chunk with overlap subtracted (except for last chunk)
-        position = endPosition - (endPosition < audio.length ? OVERLAP : 0);
-        if (position <= 0 || endPosition >= audio.length) {
-          position = endPosition; // Prevent infinite loop
-        }
-      }
-
-      // If we had any errors, throw them so they get reported
-      if (transcriptionErrors.length > 0 && allChunks.length === 0) {
-        throw new Error(`All chunks failed: ${transcriptionErrors.join('; ')}`);
-      }
-
-      // BATCH MODE: Bypass LocalAgreementProcessor - it requires multiple iterations
-      // to confirm words via local agreement, which doesn't work for single-batch processing.
-      // Instead, directly use all transcribed chunks as committed text.
-      const batchCommittedText = allChunks.map(c => c.text).join(' ');
+      // Directly use the full transcription result
+      const batchCommittedText = text;
 
       self.postMessage({
         status: "update",
         output: batchCommittedText,
         committed: batchCommittedText,
         tentative: "",
-        committedChunks: allChunks,
-        tps: 0,
-        numTokens: allChunks.length,
+        committedChunks: chunks,
+        tps: tps,
+        numTokens: chunks.length,
       });
 
       // --- TOPIC GENERATION (only if enabled) ---
@@ -375,7 +317,7 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         status: "finalized",
         output: batchCommittedText,
         committed: batchCommittedText,
-        committedChunks: allChunks,
+        committedChunks: chunks,
         tags: tags
       });
 
