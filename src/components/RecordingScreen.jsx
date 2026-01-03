@@ -274,14 +274,30 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             analyserRef.current.fftSize = 256;
             source.connect(analyserRef.current);
 
-            recorderRef.current = new MediaRecorder(mediaStream);
+            // Create MediaRecorder with iOS-compatible settings
+            let recorderOptions = {};
+            if (IS_IOS) {
+                // iOS Safari needs specific MIME types
+                // Check what's supported and use it
+                const mimeTypes = ['audio/mp4', 'audio/aac', 'audio/webm', 'audio/ogg'];
+                for (const mimeType of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(mimeType)) {
+                        recorderOptions = { mimeType };
+                        console.log('[RecordingScreen] iOS using MIME type:', mimeType);
+                        break;
+                    }
+                }
+            }
+
+            recorderRef.current = new MediaRecorder(mediaStream, recorderOptions);
             chunksRef.current = [];
             lastProcessedSamples.current = 0;
 
             recorderRef.current.ondataavailable = (e) => {
+                console.log('[RecordingScreen] ondataavailable fired, size:', e.data.size);
                 if (e.data.size > 0) {
                     chunksRef.current.push(e.data);
-                    console.log('[RecordingScreen] ondataavailable, chunk count:', chunksRef.current.length);
+                    console.log('[RecordingScreen] chunk added, count:', chunksRef.current.length);
 
                     // If we're stopping and waiting for final data, resolve the promise
                     if (finalDataResolveRef.current) {
@@ -294,7 +310,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                             if (recorderRef.current?.state === 'recording') {
                                 recorderRef.current.requestData();
                             }
-                        }, 1000); // Request data every 1 second on iOS
+                        }, 1000);
                     } else {
                         // Desktop: Process chunks for live transcription
                         processAudioChunks();
@@ -306,7 +322,14 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 setRecording(false);
             };
 
-            recorderRef.current.start();
+            // Start recording - use timeslice on iOS to get periodic data events
+            if (IS_IOS) {
+                // timeslice forces ondataavailable to fire every N ms
+                recorderRef.current.start(1000); // Get data every 1000ms on iOS
+                console.log('[RecordingScreen] Started MediaRecorder with timeslice (iOS)');
+            } else {
+                recorderRef.current.start();
+            }
             setRecording(true);
             startTimeRef.current = Date.now();
 
@@ -321,6 +344,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             // Start requesting data
             setTimeout(() => {
                 if (recorderRef.current?.state === 'recording') {
+                    console.log('[RecordingScreen] Initial requestData() - IS_IOS:', IS_IOS);
                     recorderRef.current.requestData();
                 }
             }, 1000);
@@ -500,7 +524,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             }
         } else {
             // No audio and no transcript - nothing to save
-            alert('No audio was recorded. Please try again.');
+            alert('No audio was recorded. Please try again.\n\n(v3 - iOS fix deployed)');
         }
 
         setIsSaving(false);
