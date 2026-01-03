@@ -480,9 +480,27 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                 wordTimestamps: committedChunksRef.current,
                 tags: tagsRef.current,
             });
+        } else if (chunksRef.current?.length > 0 && onSaveNote) {
+            // Transcription failed but we have audio - ask user if they want to save anyway
+            const saveAnyway = confirm(
+                `Transcription failed.\n\n` +
+                `Would you like to save the audio anyway?\n` +
+                `(You can transcribe it later or just keep the recording)\n\n` +
+                `Duration: ${elapsedTime}s`
+            );
+
+            if (saveAnyway) {
+                await onSaveNote({
+                    transcript: '[Transcription failed - audio only]',
+                    audioBlob,
+                    durationSeconds: elapsedTime,
+                    wordTimestamps: [],
+                    tags: [],
+                });
+            }
         } else {
-            // Show detailed alert for debugging on iOS
-            alert(`No transcript generated.\n\nDebug info:\n- committedText: "${committedTextRef.current?.substring(0, 30) || '(empty)'}"\n- tentativeText: "${tentativeTextRef.current?.substring(0, 30) || '(empty)'}"\n- audioChunks: ${chunksRef.current?.length || 0}\n- duration: ${elapsedTime}s`);
+            // No audio and no transcript - nothing to save
+            alert('No audio was recorded. Please try again.');
         }
 
         setIsSaving(false);
