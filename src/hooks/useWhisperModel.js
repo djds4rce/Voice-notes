@@ -106,6 +106,8 @@ export function useWhisperModel() {
 
         return () => {
             worker.current?.removeEventListener('message', onMessageReceived);
+            worker.current?.terminate();
+            worker.current = null;
         };
     }, []);
 

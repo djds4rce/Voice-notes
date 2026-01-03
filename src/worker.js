@@ -117,6 +117,7 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
 
   // If already loading the SAME model, just wait
   if (isLoading && pendingModelId === targetModel) {
+    console.log('[Worker] Ignoring duplicate load request for:', targetModel);
     return;
   }
 
@@ -275,8 +276,6 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
       // iOS BATCH MODE: Transcribe entire audio using Transformers.js built-in chunking
       // This matches the demo implementation behavior
 
-      self.postMessage({ status: "loading", data: "Transcribing audio..." });
-
       const { text, chunks, tps } = await transcriber.transcribeFull(audio, language);
 
       // Directly use the full transcription result
@@ -364,10 +363,7 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
     console.error("Finalize error:", error);
 
     // Send error message to display on saving screen
-    self.postMessage({
-      status: "loading",
-      data: `Transcription failed: ${error.message || 'Unknown error'}`
-    });
+    console.error(`Transcription failed: ${error.message || 'Unknown error'}`);
 
     // Still try to finalize even if transcription failed
     const result = agreementProcessor.finalize();
