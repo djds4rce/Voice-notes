@@ -96,6 +96,23 @@ export function NotesListPage({
         setPermissionError('');
     };
 
+    // Upload handling
+    const fileInputRef = useRef(null);
+
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelect = (event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            // Navigate to upload screen with the file
+            navigate('/upload', { state: { audioFile: file } });
+        }
+        // Reset input so same file can be selected again
+        event.target.value = '';
+    };
+
     // Debounced search (semantic or keyword based on setting)
     useEffect(() => {
         if (!query.trim()) {
@@ -456,24 +473,47 @@ export function NotesListPage({
                 ) : null}
             </div>
 
-            {/* FAB */}
-            <button
-                className={`fab ${permissionState === 'checking' ? 'fab-loading' : ''}`}
-                onClick={handleRecordClick}
-                disabled={permissionState === 'checking'}
-                aria-label="Record new note"
-            >
-                {permissionState === 'checking' ? (
-                    <div className="fab-spinner" />
-                ) : (
+            {/* FAB Container */}
+            <div className="fab-container">
+                {/* Upload FAB */}
+                <button
+                    className="fab fab-secondary"
+                    onClick={handleUploadClick}
+                    aria-label="Upload audio file"
+                >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="23" />
-                        <line x1="8" y1="23" x2="16" y2="23" />
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                )}
-            </button>
+                </button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="audio/*"
+                    style={{ display: 'none' }}
+                />
+
+                {/* Record FAB */}
+                <button
+                    className={`fab ${permissionState === 'checking' ? 'fab-loading' : ''}`}
+                    onClick={handleRecordClick}
+                    disabled={permissionState === 'checking'}
+                    aria-label="Record new note"
+                >
+                    {permissionState === 'checking' ? (
+                        <div className="fab-spinner" />
+                    ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" y1="19" x2="12" y2="23" />
+                            <line x1="8" y1="23" x2="16" y2="23" />
+                        </svg>
+                    )}
+                </button>
+            </div>
 
             {/* Permission Error Modal */}
             {(permissionState === 'denied' || permissionState === 'error') && (

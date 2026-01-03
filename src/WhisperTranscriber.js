@@ -208,6 +208,148 @@ export class WhisperTranscriber {
         return { text, chunks, tps };
     }
 
+    /**
+     * Transcribe full audio optimized for WebGPU (Upload / Batch Mode)
+     * Manually splits audio into 30s chunks with overlap for fast processing
+     * This is for non-iOS devices only
+     * @param {Float32Array} audio - Full audio samples at 16kHz
+     * @param {string} language - Language code
+     * @param {Function} onProgress - Optional callback for progress updates (0-100)
+     */
+    async transcribeFullWebGPU(audio, language, onProgress = null) {
+        const startTime = performance.now();
+        const isEnglishOnlyModel = WhisperTranscriber.currentModelId?.endsWith('.en');
+        const SAMPLE_RATE = 16000;
+
+        // Calculate audio duration
+        const audioDurationSeconds = audio.length / SAMPLE_RATE;
+        console.log(`[Whisper] Audio duration: ${audioDurationSeconds.toFixed(1)}s`);
+
+        const baseOptions = {
+            return_timestamps: true,
+            ...(isEnglishOnlyModel ? {} : { language }),
+        };
+
+        let allText = '';
+        let allChunks = [];
+
+        // For short audio (<30s), process directly
+        if (audioDurationSeconds <= 30) {
+            console.log('[Whisper] Using simple transcription for short audio');
+            onProgress?.(50); // Mid-point for short audio
+            const result = await this.transcriber(audio, baseOptions);
+            allText = result.text || '';
+            if (result.chunks) {
+                allChunks = result.chunks;
+            }
+            onProgress?.(100);
+        } else {
+            // For long audio, manually split into 30s chunks with 5s overlap
+            const CHUNK_LENGTH_S = 30;
+            const OVERLAP_S = 5;
+            const CHUNK_SAMPLES = CHUNK_LENGTH_S * SAMPLE_RATE;
+            const STRIDE_SAMPLES = (CHUNK_LENGTH_S - OVERLAP_S) * SAMPLE_RATE;
+
+            console.log(`[Whisper] Splitting into ${CHUNK_LENGTH_S}s chunks with ${OVERLAP_S}s overlap`);
+
+            let offset = 0;
+            let chunkIndex = 0;
+            let prevEndTime = 0;  // Track where previous chunk ended for deduplication
+
+            // Calculate total chunks for progress
+            const totalChunks = Math.ceil((audio.length - CHUNK_SAMPLES) / STRIDE_SAMPLES) + 1;
+
+            while (offset < audio.length) {
+                const end = Math.min(offset + CHUNK_SAMPLES, audio.length);
+                const chunkAudio = audio.slice(offset, end);
+
+                // Report progress
+                const progress = Math.round((chunkIndex / totalChunks) * 100);
+                onProgress?.(progress);
+
+                console.log(`[Whisper] Processing chunk ${chunkIndex + 1}/${totalChunks} (${(offset / SAMPLE_RATE).toFixed(1)}s - ${(end / SAMPLE_RATE).toFixed(1)}s)`);
+
+                const result = await this.transcriber(chunkAudio, baseOptions);
+                const timeOffset = offset / SAMPLE_RATE;
+
+                if (result.text && result.chunks) {
+                    for (const chunk of result.chunks) {
+                        const segStart = (chunk.timestamp?.[0] ?? 0);
+                        const segEnd = (chunk.timestamp?.[1] ?? 0);
+                        const globalStart = segStart + timeOffset;
+                        const globalEnd = segEnd + timeOffset;
+
+                        // Skip segments whose center point is before the previous end time
+                        // This allows partial overlaps while avoiding full duplicates
+                        const segCenter = (globalStart + globalEnd) / 2;
+                        if (chunkIndex > 0 && segCenter < prevEndTime) {
+                            continue;
+                        }
+
+                        // Add to text
+                        const segText = (chunk.text || '').trim();
+                        if (segText) {
+                            if (allText && !allText.endsWith(' ')) {
+                                allText += ' ';
+                            }
+                            allText += segText;
+                        }
+
+                        // Add to chunks with global timestamps
+                        allChunks.push({
+                            ...chunk,
+                            timestamp: [globalStart, globalEnd]
+                        });
+
+                        // Update prevEndTime
+                        prevEndTime = Math.max(prevEndTime, globalEnd);
+                    }
+                } else if (result.text) {
+                    // Fallback if no chunks returned - just append text
+                    if (allText && !allText.endsWith(' ')) {
+                        allText += ' ';
+                    }
+                    allText += result.text.trim();
+                    // Estimate end time for text without chunks
+                    prevEndTime = (end / SAMPLE_RATE);
+                }
+
+                offset += STRIDE_SAMPLES;
+                chunkIndex++;
+            }
+        }
+
+        const endTime = performance.now();
+        const duration = (endTime - startTime) / 1000;
+        console.log(`[Whisper] Transcription completed in ${duration.toFixed(2)}s`);
+
+        // Process chunks into word-level timestamps
+        let chunks = [];
+        const text = allText.trim();
+
+        if (allChunks && allChunks.length > 0) {
+            // Segment-level: split into words with estimated times
+            for (const segment of allChunks) {
+                const words = (segment.text || "").trim().split(/\s+/).filter(w => w.length > 0);
+                const segStart = segment.timestamp?.[0] ?? 0;
+                const segEnd = segment.timestamp?.[1] ?? 0;
+                const wordDuration = words.length > 0 ? (segEnd - segStart) / words.length : 0;
+
+                words.forEach((word, i) => {
+                    chunks.push({
+                        text: word,
+                        start: segStart + i * wordDuration,
+                        end: segStart + (i + 1) * wordDuration,
+                    });
+                });
+            }
+        }
+
+        const tps = chunks.length / duration;
+
+        return { text, chunks, tps };
+    }
+
     _processResult(result, startTime, hasWordTimestamps) {
         // ... (existing helper remains for normal mode)
         const endTime = performance.now();

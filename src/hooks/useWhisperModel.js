@@ -106,8 +106,9 @@ export function useWhisperModel() {
 
         return () => {
             worker.current?.removeEventListener('message', onMessageReceived);
-            worker.current?.terminate();
-            worker.current = null;
+            // Don't terminate worker - it should persist for the app lifetime
+            // Terminating causes issues with React Strict Mode where load message
+            // gets sent to terminated worker
         };
     }, []);
 
@@ -130,17 +131,18 @@ export function useWhisperModel() {
 
     // Auto-load model on mount - triggered once when settings are available
     useEffect(() => {
+        console.log('[useWhisperModel] Auto-load effect, whisperModel:', whisperModel, 'hasTriggeredLoad:', hasTriggeredLoad.current);
         // Wait for whisperModel to be available from context
         if (!whisperModel) return;
 
         // Only trigger initial load once
-        if (!hasTriggeredLoad.current) {
+        if (!hasTriggeredLoad.current && worker.current) {
             hasTriggeredLoad.current = true;
             previousModelRef.current = whisperModel;
             previousLanguageRef.current = isEnglish;
 
             const shouldLoadTags = isEnglish && taggingEnabled && !IS_IOS;
-            worker.current?.postMessage({
+            worker.current.postMessage({
                 type: 'load',
                 data: {
                     modelId: whisperModel,

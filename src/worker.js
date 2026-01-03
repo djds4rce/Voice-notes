@@ -90,10 +90,12 @@ const MAX_LOAD_ATTEMPTS = 2; // Try WebGPU once, then WASM once
 // ===== MESSAGE HANDLERS =====
 
 async function handleLoad({ modelId = null, taggingEnabled = true, device = null, language = 'en' } = {}) {
+  console.log('[Worker] handleLoad called:', { modelId, taggingEnabled, device, language });
   const baseModel = modelId || 'Xenova/whisper-base';
   // Use English-only model when language is 'en' for better performance
   const targetModel = getOptimalWhisperModel(baseModel, language);
   let targetDevice = device || getRecommendedDevice();
+  console.log('[Worker] Target model:', targetModel, 'device:', targetDevice);
 
   // CRITICAL: Force disable tagging on iOS to prevent memory crashes
   // Even if the caller requests tagging, iOS cannot handle loading multiple models
@@ -389,6 +391,67 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
   isProcessing = false;
 }
 
+// ===== UPLOAD TRANSCRIPTION HANDLER =====
+
+async function handleTranscribeUpload({ audio, language = 'en', taggingEnabled = true }) {
+  // Ensure model is loaded
+  if (!transcriber) {
+    self.postMessage({
+      status: "upload-error",
+      error: "Model not loaded. Please wait for the model to load."
+    });
+    return;
+  }
+
+  self.postMessage({ status: "upload-transcribing", progress: 0 });
+
+  // Progress callback to send updates to main thread
+  const onProgress = (progress) => {
+    self.postMessage({ status: "upload-progress", progress });
+  };
+
+  try {
+    // Use WebGPU-optimized transcription for uploaded audio
+    // On iOS/Apple devices, fall back to regular transcribeFull
+    const isApple = isAppleDevice();
+    let result;
+
+    if (isApple) {
+      result = await transcriber.transcribeFull(audio, language);
+    } else {
+      result = await transcriber.transcribeFullWebGPU(audio, language, onProgress);
+    }
+
+    const { text, chunks, tps } = result;
+
+    // Topic generation (only on non-iOS when enabled)
+    let tags = [];
+    if (taggingEnabled && !isApple && text && text.length > 50) {
+      try {
+        const topicGen = await TopicGenerator.getInstance(() => { });
+        tags = await topicGen.generateTags(text);
+      } catch (tagError) {
+        console.error("[Worker] Topic generation failed:", tagError);
+      }
+    }
+
+    self.postMessage({
+      status: "upload-complete",
+      text,
+      chunks,
+      tags,
+      tps
+    });
+
+  } catch (error) {
+    console.error("[Worker] Upload transcription error:", error);
+    self.postMessage({
+      status: "upload-error",
+      error: error.message || "Transcription failed"
+    });
+  }
+}
+
 function handleReset() {
   agreementProcessor.reset();
 }
@@ -409,6 +472,10 @@ self.addEventListener("message", async (e) => {
 
     case "finalize":
       await handleFinalize(data);
+      break;
+
+    case "transcribe-upload":
+      await handleTranscribeUpload(data);
       break;
 
     case "reset":

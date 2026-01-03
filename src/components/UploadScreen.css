@@ -1,0 +1,203 @@
+/**
+ * UploadScreen Styles - Hand-Drawn Design System
+ */
+
+.upload-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    background-image: radial-gradient(var(--color-dot-pattern) 1px, transparent 1px);
+    background-size: 24px 24px;
+    padding: 20px;
+}
+
+.upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 320px;
+}
+
+/* Upload Icon */
+.upload-icon {
+    width: 100px;
+    height: 100px;
+    border: 4px solid var(--color-pencil);
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    background: var(--color-card);
+    box-shadow: var(--shadow-hand);
+    animation: uploadPulse 2s ease-in-out infinite;
+}
+
+.upload-icon.error {
+    border-color: var(--color-accent);
+    animation: none;
+}
+
+.upload-loading {
+    width: 44px;
+    height: 44px;
+    color: var(--color-accent);
+}
+
+.error-icon {
+    width: 44px;
+    height: 44px;
+    color: var(--color-accent);
+}
+
+@keyframes uploadPulse {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.05) rotate(-2deg);
+    }
+}
+
+/* Typography */
+.upload-title {
+    font-family: 'Kalam', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-pencil);
+    margin: 0 0 8px 0;
+}
+
+.upload-title.error {
+    color: var(--color-accent);
+}
+
+.upload-subtitle {
+    font-family: 'Patrick Hand', cursive;
+    font-size: 16px;
+    color: var(--color-pencil);
+    opacity: 0.6;
+    margin: 0 0 24px 0;
+    line-height: 1.4;
+}
+
+/* Progress Container */
+.upload-progress-container {
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+/* Cancel Button */
+.cancel-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-muted);
+    color: var(--color-pencil);
+    border: 2px solid var(--color-pencil);
+    border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
+    padding: 12px 32px;
+    font-family: 'Patrick Hand', cursive;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: var(--shadow-hand-sm);
+    transition: all 0.1s ease;
+    margin-top: 16px;
+}
+
+.cancel-button:hover {
+    background: var(--color-accent);
+    color: white;
+    box-shadow: var(--shadow-hand-sm);
+    transform: translate(1px, 1px);
+}
+
+.cancel-icon {
+    font-size: 18px;
+}
+
+/* Transcribing Animation */
+.transcribe-animation {
+    margin-bottom: 32px;
+}
+
+.waveform-circle {
+    width: 120px;
+    height: 120px;
+    border: 4px solid var(--color-pencil);
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--color-card);
+    box-shadow: var(--shadow-hand);
+    animation: circleGrow 2s ease-in-out infinite;
+}
+
+.waveform-circle::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border: 2px dashed rgba(45, 45, 45, 0.3);
+    border-radius: 60px 50px 55px 45px / 50px 60px 45px 55px;
+}
+
+@keyframes circleGrow {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.05) rotate(-2deg);
+    }
+}
+
+.wave-bar {
+    width: 6px;
+    height: 20px;
+    background: linear-gradient(180deg, #ff4d4d 0%, #e5e0d8 100%);
+    border-radius: 185px 25px 205px 25px / 25px 205px 25px 185px;
+    animation: waveBounce 0.8s ease-in-out infinite;
+}
+
+@keyframes waveBounce {
+
+    0%,
+    100% {
+        height: 20px;
+    }
+
+    50% {
+        height: 40px;
+    }
+}
+
+/* Transcription Progress Bar */
+.transcription-progress-bar {
+    width: 100%;
+    max-width: 280px;
+    height: 12px;
+    background: var(--color-muted);
+    border: 2px solid var(--color-pencil);
+    border-radius: 30px 60px 40px 70px / 60px 30px 70px 40px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.transcription-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent) 0%, #ff6b6b 100%);
+    border-radius: inherit;
+    transition: width 0.3s ease-out;
+}

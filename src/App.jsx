@@ -14,6 +14,7 @@ import { HashRouter, Routes, Route, useNavigate, Navigate } from 'react-router-d
 // Components
 import { NotesListPage } from './components/NotesListPage';
 import { RecordingScreen } from './components/RecordingScreen';
+import { UploadScreen } from './components/UploadScreen';
 import { AudioPlayerV2 as AudioPlayer } from './components/AudioPlayerV2';
 import { SettingsPage } from './components/SettingsPage';
 
@@ -241,6 +242,18 @@ function AppContent() {
         <Route
           path="/settings"
           element={<SettingsPage />}
+        />
+        <Route
+          path="/upload"
+          element={
+            <UploadScreen
+              worker={worker.current}
+              onSaveNote={handleSaveNote}
+              whisperStatus={status}
+              progressItems={progressItems}
+              loadingMessage={loadingMessage}
+            />
+          }
         />
         <Route
           path="/note/:id"

@@ -390,6 +390,56 @@
     transform: scale(1.15) rotate(5deg);
 }
 
+/* FAB Container - stacks buttons vertically */
+.fab-container {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    z-index: 100;
+}
+
+.fab-container .fab {
+    position: relative;
+    bottom: auto;
+    right: auto;
+    animation: none;
+}
+
+.fab-container .fab:last-child {
+    animation: bounceIn 0.5s ease-out 0.2s backwards;
+}
+
+/* Secondary FAB - smaller upload button */
+.fab.fab-secondary {
+    width: 56px;
+    height: 56px;
+    background: var(--color-card);
+    box-shadow: var(--shadow-hand);
+    animation: bounceIn 0.5s ease-out 0.1s backwards;
+}
+
+.fab.fab-secondary svg {
+    width: 24px;
+    height: 24px;
+    color: var(--color-pencil);
+    stroke-width: 2.5;
+}
+
+.fab.fab-secondary:hover {
+    background: var(--color-accent);
+    box-shadow: var(--shadow-hand-sm);
+    transform: translate(2px, 2px) rotate(-8deg) scale(1.08);
+}
+
+.fab.fab-secondary:hover svg {
+    color: white;
+    transform: scale(1.15) rotate(5deg);
+}
+
 /* Initial Loading State */
 .initial-loading {
     display: flex;
