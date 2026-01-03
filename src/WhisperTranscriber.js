@@ -262,17 +262,106 @@ export class WhisperTranscriber {
             while (offset < audio.length) {
                 const end = Math.min(offset + CHUNK_SAMPLES, audio.length);
                 const chunkAudio = audio.slice(offset, end);
+                const chunkDurationSec = chunkAudio.length / SAMPLE_RATE;
 
                 // Report progress
                 const progress = Math.round((chunkIndex / totalChunks) * 100);
                 onProgress?.(progress);
 
-                console.log(`[Whisper] Processing chunk ${chunkIndex + 1}/${totalChunks} (${(offset / SAMPLE_RATE).toFixed(1)}s - ${(end / SAMPLE_RATE).toFixed(1)}s)`);
+                console.log(`[Whisper] Processing chunk ${chunkIndex + 1}/${totalChunks}:`);
+                console.log(`  - Audio slice: offset=${offset} (${(offset / SAMPLE_RATE).toFixed(1)}s) to end=${end} (${(end / SAMPLE_RATE).toFixed(1)}s)`);
+                console.log(`  - Chunk duration: ${chunkDurationSec.toFixed(2)}s, samples: ${chunkAudio.length}`);
 
-                const result = await this.transcriber(chunkAudio, baseOptions);
+                let result = await this.transcriber(chunkAudio, baseOptions);
                 const timeOffset = offset / SAMPLE_RATE;
 
-                if (result.text && result.chunks) {
+                // Debug: log what the transcriber returned for this chunk
+                console.log(`[Whisper] Chunk ${chunkIndex + 1} result:`, {
+                    hasText: !!result.text,
+                    textLength: result.text?.length ?? 0,
+                    hasChunks: !!result.chunks,
+                    chunksLength: result.chunks?.length ?? 0,
+                    prevEndTime: prevEndTime.toFixed(2)
+                });
+
+                // RETRY LOGIC: If Whisper returns empty, retry up to 2 times
+                // Some chunks randomly fail on first attempt
+                const isEmpty = (!result.chunks || result.chunks.length === 0) && !result.text;
+                if (isEmpty && chunkDurationSec > 5) {
+                    console.log(`[Whisper] Chunk ${chunkIndex + 1} returned empty, retrying...`);
+
+                    // Retry 1: Simple retry
+                    result = await this.transcriber(chunkAudio, baseOptions);
+                    console.log(`[Whisper] Chunk ${chunkIndex + 1} retry 1 result: chunks=${result.chunks?.length ?? 0}`);
+
+                    // Retry 2: If still empty, try with slightly different options
+                    if ((!result.chunks || result.chunks.length === 0) && !result.text) {
+                        console.log(`[Whisper] Chunk ${chunkIndex + 1} still empty, trying with forced timestamps...`);
+                        result = await this.transcriber(chunkAudio, {
+                            ...baseOptions,
+                            return_timestamps: 'word', // Try word-level timestamps
+                        });
+                        console.log(`[Whisper] Chunk ${chunkIndex + 1} retry 2 result: chunks=${result.chunks?.length ?? 0}`);
+                    }
+
+                    // Fallback: Split chunk into smaller sub-chunks if still empty
+                    if ((!result.chunks || result.chunks.length === 0) && !result.text && chunkDurationSec > 10) {
+                        console.log(`[Whisper] Chunk ${chunkIndex + 1} still empty after retries, splitting into sub-chunks...`);
+
+                        // Split into ~15s sub-chunks
+                        const SUB_CHUNK_SAMPLES = 15 * SAMPLE_RATE;
+                        let subOffset = 0;
+                        let subChunkIndex = 0;
+
+                        while (subOffset < chunkAudio.length) {
+                            const subEnd = Math.min(subOffset + SUB_CHUNK_SAMPLES, chunkAudio.length);
+                            const subChunkAudio = chunkAudio.slice(subOffset, subEnd);
+                            const subTimeOffset = timeOffset + (subOffset / SAMPLE_RATE);
+
+                            console.log(`[Whisper] Processing sub-chunk ${subChunkIndex + 1} of chunk ${chunkIndex + 1}`);
+                            const subResult = await this.transcriber(subChunkAudio, baseOptions);
+
+                            if (subResult.chunks && subResult.chunks.length > 0) {
+                                for (const chunk of subResult.chunks) {
+                                    const segStart = (chunk.timestamp?.[0] ?? 0);
+                                    const segEnd = (chunk.timestamp?.[1] ?? 0);
+                                    const globalStart = segStart + subTimeOffset;
+                                    const globalEnd = segEnd + subTimeOffset;
+
+                                    const segCenter = (globalStart + globalEnd) / 2;
+                                    if (segCenter < prevEndTime) continue;
+
+                                    const segText = (chunk.text || '').trim();
+                                    if (segText) {
+                                        if (allText && !allText.endsWith(' ')) allText += ' ';
+                                        allText += segText;
+                                    }
+
+                                    allChunks.push({ ...chunk, timestamp: [globalStart, globalEnd] });
+                                    prevEndTime = Math.max(prevEndTime, globalEnd);
+                                }
+                            } else if (subResult.text) {
+                                if (allText && !allText.endsWith(' ')) allText += ' ';
+                                allText += subResult.text.trim();
+                                prevEndTime = Math.max(prevEndTime, subTimeOffset + (subChunkAudio.length / SAMPLE_RATE));
+                            }
+
+                            subOffset += SUB_CHUNK_SAMPLES;
+                            subChunkIndex++;
+                        }
+
+                        // Skip normal processing since we handled via sub-chunks
+                        offset += STRIDE_SAMPLES;
+                        chunkIndex++;
+                        continue;
+                    }
+                }
+
+                // Check chunks array independently - text might be empty but chunks valid
+                if (result.chunks && result.chunks.length > 0) {
+                    let addedCount = 0;
+                    let skippedCount = 0;
+
                     for (const chunk of result.chunks) {
                         const segStart = (chunk.timestamp?.[0] ?? 0);
                         const segEnd = (chunk.timestamp?.[1] ?? 0);
@@ -283,6 +372,8 @@ export class WhisperTranscriber {
                         // This allows partial overlaps while avoiding full duplicates
                         const segCenter = (globalStart + globalEnd) / 2;
                         if (chunkIndex > 0 && segCenter < prevEndTime) {
+                            skippedCount++;
+                            console.log(`[Whisper] Skipped segment: center=${segCenter.toFixed(2)}s < prevEndTime=${prevEndTime.toFixed(2)}s, text="${(chunk.text || '').trim().substring(0, 30)}..."`);
                             continue;
                         }
 
@@ -303,7 +394,10 @@ export class WhisperTranscriber {
 
                         // Update prevEndTime
                         prevEndTime = Math.max(prevEndTime, globalEnd);
+                        addedCount++;
                     }
+
+                    console.log(`[Whisper] Chunk ${chunkIndex + 1}: added=${addedCount}, skipped=${skippedCount}, newPrevEndTime=${prevEndTime.toFixed(2)}s`);
                 } else if (result.text) {
                     // Fallback if no chunks returned - just append text
                     if (allText && !allText.endsWith(' ')) {
@@ -312,6 +406,9 @@ export class WhisperTranscriber {
                     allText += result.text.trim();
                     // Estimate end time for text without chunks
                     prevEndTime = (end / SAMPLE_RATE);
+                } else {
+                    // Log that this chunk truly had no content even after retries
+                    console.warn(`[Whisper] Chunk ${chunkIndex + 1} (${timeOffset.toFixed(1)}s-${(end / SAMPLE_RATE).toFixed(1)}s) returned no content after all attempts`);
                 }
 
                 offset += STRIDE_SAMPLES;
