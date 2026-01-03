@@ -300,9 +300,9 @@ async function handleFinalize({ audio, language, audioWindowStart = 0, taggingEn
         numTokens: chunks.length,
       });
 
-      // --- TOPIC GENERATION (only if enabled and NOT batch mode/iOS) ---
+      // --- TOPIC GENERATION (only if enabled) ---
       let tags = [];
-      if (taggingEnabled && !batchMode && !isAppleDevice()) {
+      if (taggingEnabled) {
         try {
           if (batchCommittedText && batchCommittedText.length > 50) {
             const topicGen = await TopicGenerator.getInstance((progress) => { });

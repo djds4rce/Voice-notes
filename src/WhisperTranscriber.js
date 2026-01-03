@@ -144,52 +144,33 @@ export class WhisperTranscriber {
         const startTime = performance.now();
 
         let result;
+        let hasWordTimestamps = false;
         const isEnglishOnlyModel = WhisperTranscriber.currentModelId?.endsWith('.en');
 
         // Options specifically for long-form audio (demo-style)
-        // matches https://github.com/xenova/whisper-web/blob/main/src/worker.js
         const options = {
-            return_timestamps: true, // Demo uses true (segment-level), NOT "word"
+            return_timestamps: "word",
             chunk_length_s: 30,
             stride_length_s: 5,
-            force_full_sequences: false,
             ...(isEnglishOnlyModel ? {} : { language }),
         };
 
         try {
-            console.log('[Whisper] Starting full transcription with options:', options);
             result = await this.transcriber(audio, options);
+            hasWordTimestamps = result.chunks && result.chunks.length > 0;
         } catch (e) {
-            console.error("[Whisper] Full transcription error:", e);
-            throw e;
+            console.warn("[Whisper] Word timestamps not supported in full mode, falling back:", e.message);
+            const fallbackOptions = {
+                ...options,
+                return_timestamps: true
+            };
+            result = await this.transcriber(audio, fallbackOptions);
         }
 
-        const endTime = performance.now();
-        const duration = (endTime - startTime) / 1000;
-
-        // Process segment-level results from long-form transcription
-        let text = result.text || "";
-        let chunks = [];
-
-        // Simple cleanup
-        text = text.trim();
-
-        if (result.chunks) {
-            // result.chunks are segments in this mode
-            chunks = result.chunks.map(chunk => ({
-                text: chunk.text?.trim() || "",
-                start: chunk.timestamp?.[0] ?? 0,
-                end: chunk.timestamp?.[1] ?? 0,
-            }));
-        }
-
-        const tps = chunks.length / duration;
-
-        return { text, chunks, tps };
+        return this._processResult(result, startTime, hasWordTimestamps);
     }
 
     _processResult(result, startTime, hasWordTimestamps) {
-        // ... (existing helper remains for normal mode)
         const endTime = performance.now();
         const duration = (endTime - startTime) / 1000;
 
