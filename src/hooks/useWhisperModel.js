@@ -113,7 +113,7 @@ export function useWhisperModel() {
     const loadModel = useCallback((modelId, options = {}) => {
         if (!worker.current) return;
 
-        const shouldLoadTags = isEnglish && taggingEnabled;
+        const shouldLoadTags = isEnglish && taggingEnabled && !IS_IOS;
         worker.current.postMessage({
             type: 'load',
             data: {
@@ -137,7 +137,7 @@ export function useWhisperModel() {
             previousModelRef.current = whisperModel;
             previousLanguageRef.current = isEnglish;
 
-            const shouldLoadTags = isEnglish && taggingEnabled;
+            const shouldLoadTags = isEnglish && taggingEnabled && !IS_IOS;
             worker.current?.postMessage({
                 type: 'load',
                 data: {
@@ -164,7 +164,7 @@ export function useWhisperModel() {
         const timer = setTimeout(() => {
             previousModelRef.current = whisperModel;
             previousLanguageRef.current = isEnglish;
-            const shouldLoadTags = isEnglish && taggingEnabled;
+            const shouldLoadTags = isEnglish && taggingEnabled && !IS_IOS;
             worker.current?.postMessage({
                 type: 'load',
                 data: {
