@@ -182,7 +182,15 @@ export function useRecording({ worker, onSaveNote, whisperStatus }) {
             recorderRef.current.ondataavailable = strategy.onDataAvailable;
 
             recorderRef.current.onstop = () => setRecording(false);
-            recorderRef.current.start();
+
+            // iOS: Start with 1s timeslice to auto-fire ondataavailable
+            // Desktop: Start without timeslice, driven by manual requestData in WebStrategy
+            if (IS_IOS) {
+                recorderRef.current.start(1000);
+            } else {
+                recorderRef.current.start();
+            }
+
             setRecording(true);
 
             startTimeRef.current = Date.now();
@@ -192,13 +200,15 @@ export function useRecording({ worker, onSaveNote, whisperStatus }) {
 
             updateAudioLevels();
 
-            // Initial request
-            setTimeout(() => {
-                if (recorderRef.current?.state === 'recording') {
-                    console.log('[useRecording] Initial requestData()');
-                    recorderRef.current.requestData();
-                }
-            }, 1000);
+            // Initial request - only for Desktop Web Strategy which needs manual kickstart
+            if (!IS_IOS) {
+                setTimeout(() => {
+                    if (recorderRef.current?.state === 'recording') {
+                        console.log('[useRecording] Initial requestData()');
+                        recorderRef.current.requestData();
+                    }
+                }, 1000);
+            }
 
         } catch (err) {
             console.error('Error starting recording:', err);

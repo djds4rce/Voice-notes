@@ -16,12 +16,7 @@ export function useIOSRecordingStrategy({
                 finalDataResolveRef.current = null;
             } else {
                 // iOS: Skip live transcription but keep collecting audio chunks
-                // Schedule next data request to accumulate chunks
-                setTimeout(() => {
-                    if (recorderRef.current?.state === 'recording') {
-                        recorderRef.current.requestData();
-                    }
-                }, 1000); // Request data every 1 second on iOS
+                // Data collection is driven by MediaRecorder.start(timeslice) in useRecording.js
             }
         }
     }, [chunksRef, finalDataResolveRef, recorderRef]);
