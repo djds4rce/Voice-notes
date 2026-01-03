@@ -95,10 +95,6 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
   const targetModel = getOptimalWhisperModel(baseModel, language);
   let targetDevice = device || getRecommendedDevice();
 
-  // CRITICAL: Force disable tagging on iOS to prevent memory crashes
-  // Even if the caller requests tagging, iOS cannot handle loading multiple models
-  const actualTaggingEnabled = isAppleDevice() ? false : taggingEnabled;
-
   // If already loaded with same model and device, just send ready
   if (transcriber && currentModelId === targetModel && currentDevice === targetDevice && !isLoading) {
     self.postMessage({ status: "ready" });
@@ -155,15 +151,17 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
       self.postMessage({ status: "loading", data: `Compiling shaders and warming up... (${targetDevice.toUpperCase()})` });
       await transcriber.warmup();
     } else {
-      // iOS: Force garbage collection opportunity before proceeding
       self.postMessage({ status: "loading", data: `Model ready (${targetDevice.toUpperCase()} - ${deviceType})` });
     }
 
-    // Only load TopicGenerator on non-iOS devices when tagging is enabled
-    // iOS MUST NOT load this model - it causes memory crashes
-    if (actualTaggingEnabled && !isAppleDevice()) {
+    if (taggingEnabled) {
       self.postMessage({ status: "loading", data: "Loading topic model..." });
       await TopicGenerator.getInstance((progress) => {
+        // We can forward topic model progress if needed, or just let it load silently/with generic message
+        // For now, let's just log it or forward if it's significant, 
+        // but to avoid protocol confusion with Whisper progress, we might keep it simple.
+        // Or we can verify if the UI handles generic progress. 
+        // The UI maps file names to progress.
         if (progress.status === "progress") {
           self.postMessage({
             status: "initiate",
@@ -174,6 +172,7 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
           self.postMessage(progress);
         }
       }, targetDevice);
+    } else {
     }
 
     isLoading = false;
@@ -188,11 +187,20 @@ async function handleLoad({ modelId = null, taggingEnabled = true, device = null
     currentModelId = null;
     currentDevice = null;
 
-    // All attempts exhausted or error occurred
-    self.postMessage({
-      status: "error",
-      error: `Failed to load model: ${error.message || "Unknown error"}. Try refreshing the page.`
-    });
+    // Post error status and attempt automatic retry with fallback
+    // Don't auto-retry on iOS - retrying doubles memory usage and causes crashes
+    if (!isAppleDevice() && loadAttempts < MAX_LOAD_ATTEMPTS) {
+      // Retry with WASM fallback
+      setTimeout(() => {
+        handleLoad({ modelId, taggingEnabled, device: "wasm" });
+      }, 500);
+    } else {
+      // All attempts exhausted
+      self.postMessage({
+        status: "error",
+        error: `Failed to load model: ${error.message || "Unknown error"}. Try refreshing the page.`
+      });
+    }
   }
 }
 

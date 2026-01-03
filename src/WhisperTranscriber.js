@@ -1,15 +1,12 @@
 import { getTransformers, isUsingLegacyTransformers } from "./utils/transformerLoader.js";
-import { getRecommendedDevice, isAppleDevice } from "./utils/deviceDetection.js";
+import { getRecommendedDevice } from "./utils/deviceDetection.js";
 
 /**
  * Device-specific configuration for Whisper model
  * - WebGPU: Use high precision encoder with quantized decoder for GPU acceleration
- * - WASM: Use fully quantized model for CPU efficiency (matches whisper-web demo)
+ * - WASM: Use fully quantized model for CPU efficiency
  * 
  * Note: On Apple devices (iOS/macOS Safari), we force WASM to avoid WebGPU memory leaks.
- * The whisper-web demo (https://github.com/xenova/whisper-web) works on iOS by using:
- * 1. Explicit quantized: true option
- * 2. no_attentions revision for medium models
  * @see https://github.com/huggingface/transformers.js/issues/1242
  */
 const PER_DEVICE_CONFIG = {
@@ -21,10 +18,8 @@ const PER_DEVICE_CONFIG = {
         device: "webgpu",
     },
     wasm: {
-        // iOS: Use quantized models to reduce memory footprint (matches whisper-web)
         dtype: "q8",
         device: "wasm",
-        quantized: true,
     },
 };
 
@@ -71,28 +66,16 @@ export class WhisperTranscriber {
         // Get device-specific configuration
         const config = PER_DEVICE_CONFIG[targetDevice] || PER_DEVICE_CONFIG.wasm;
 
-        // Determine if we need the no_attentions revision (required for medium models on iOS)
-        // This significantly reduces memory usage - matches whisper-web demo behavior
-        const needsNoAttentions = targetModel.includes('/whisper-medium') && isAppleDevice();
-        const revision = needsNoAttentions ? 'no_attentions' : 'main';
-
         // Use pipeline API for automatic speech recognition with word-level timestamps support
         // Note: v2 ignores device/dtype options gracefully (uses WASM with default quantization)
-        // On iOS: we explicitly pass quantized: true to match the whisper-web demo behavior
-        const pipelineOptions = {
-            dtype: config.dtype,
-            device: config.device,
-            quantized: config.quantized,
-            progress_callback: progressCallback,
-            revision: revision,
-        };
-
-        console.log(`[Whisper] Loading model: ${targetModel}, device: ${targetDevice}, revision: ${revision}`);
-
         const transcriber = await pipeline(
             "automatic-speech-recognition",
             targetModel,
-            pipelineOptions
+            {
+                dtype: config.dtype,
+                device: config.device,
+                progress_callback: progressCallback,
+            }
         );
 
         this.currentModelId = targetModel;
@@ -166,13 +149,10 @@ export class WhisperTranscriber {
         // Options specifically for long-form audio (demo-style)
         // matches https://github.com/xenova/whisper-web/blob/main/src/worker.js
         const options = {
-            return_timestamps: true,
+            return_timestamps: true, // Demo uses true (segment-level), NOT "word"
             chunk_length_s: 30,
             stride_length_s: 5,
             force_full_sequences: false,
-            // Greedy decoding for memory efficiency and speed
-            do_sample: false,
-            top_k: 0,
             ...(isEnglishOnlyModel ? {} : { language }),
         };
 
