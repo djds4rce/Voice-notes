@@ -285,7 +285,7 @@ export function useRecording({ worker, onSaveNote, whisperStatus }) {
                     audio,
                     language: currentLanguage,
                     audioWindowStart,
-                    taggingEnabled: currentIsEnglish && currentTagging,
+                    taggingEnabled: currentIsEnglish && currentTagging && !IS_IOS,
                     batchMode
                 }
             });
