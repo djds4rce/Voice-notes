@@ -135,9 +135,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                             ))}
                         </div>
                     )}
-                    <div className="device-badge">
-                        {DEVICE.toUpperCase()} {IS_IOS ? '(iOS)' : ''}
-                    </div>
+
                     <button className="cancel-button model-cancel" onClick={() => navigate('/')}>
                         Cancel
                     </button>
@@ -181,9 +179,7 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
                     <span className="recording-dot"></span>
                     LISTENING...
                 </div>
-                <div className="device-badge small">
-                    {DEVICE.toUpperCase()}
-                </div>
+
             </div>
 
             {/* Timer */}
@@ -203,22 +199,50 @@ export function RecordingScreen({ worker, onSaveNote, whisperStatus, progressIte
             <div className="transcript-container">
                 <span className="quote-mark left">"</span>
                 <div className="transcript-scroll-area" ref={transcriptScrollRef}>
-                    <p className="transcript-text">
-                        {committedWords.map((item, idx) => (
-                            <span
-                                key={`committed-${idx}`}
-                                className={item.isNew ? 'word-new' : ''}
-                            >
-                                {idx > 0 ? ' ' : ''}{item.word}
-                            </span>
-                        ))}
-                        {tentativeText && (
-                            <span className="tentative-text">
-                                {committedText ? ' ' : ''}{tentativeText}
-                            </span>
-                        )}
-                        <span className="cursor">|</span>
-                    </p>
+                    {IS_IOS ? (
+                        <p className="transcript-text ios-placeholder">
+                            {committedWords.length > 0 || tentativeText ? (
+                                <>
+                                    {committedWords.map((item, idx) => (
+                                        <span
+                                            key={`committed-${idx}`}
+                                            className={item.isNew ? 'word-new' : ''}
+                                        >
+                                            {idx > 0 ? ' ' : ''}{item.word}
+                                        </span>
+                                    ))}
+                                    {tentativeText && (
+                                        <span className="tentative-text">
+                                            {committedText ? ' ' : ''}{tentativeText}
+                                        </span>
+                                    )}
+                                </>
+                            ) : (
+                                <span className="placeholder-text">
+                                    Live transcription is not available on iOS.
+                                    Processing will happen after you stop recording.
+                                </span>
+                            )}
+                            <span className="cursor">|</span>
+                        </p>
+                    ) : (
+                        <p className="transcript-text">
+                            {committedWords.map((item, idx) => (
+                                <span
+                                    key={`committed-${idx}`}
+                                    className={item.isNew ? 'word-new' : ''}
+                                >
+                                    {idx > 0 ? ' ' : ''}{item.word}
+                                </span>
+                            ))}
+                            {tentativeText && (
+                                <span className="tentative-text">
+                                    {committedText ? ' ' : ''}{tentativeText}
+                                </span>
+                            )}
+                            <span className="cursor">|</span>
+                        </p>
+                    )}
                 </div>
                 <span className="quote-mark right">"</span>
             </div>

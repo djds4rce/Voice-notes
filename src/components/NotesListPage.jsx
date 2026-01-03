@@ -13,6 +13,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NoteCard from './NoteCard';
+import { isAppleDevice } from '../utils/deviceDetection';
 import './NotesListPage.css';
 
 export function NotesListPage({
@@ -254,6 +255,21 @@ export function NotesListPage({
 
     return (
         <div className="notes-list-page">
+            {/* iOS Warning Banner */}
+            {true && ( // Ideally use IS_IOS from hook, but for now we will import it or checking navigator
+                <div style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    padding: '12px',
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    borderBottom: '1px solid #ffeeba',
+                    display: isAppleDevice() ? 'block' : 'none'
+                }}>
+                    ⚠️ <strong>iOS Warning:</strong> Audio inference is experimental. Recordings &gt;30s may fail or crash.
+                </div>
+            )}
+
             {/* Header */}
             <header className="notes-header">
                 {!searchOpen ? (

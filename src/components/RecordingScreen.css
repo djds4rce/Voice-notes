@@ -239,9 +239,9 @@
 .tentative-text {
   color: var(--color-pencil);
   opacity: 0.5;
-  font-style: italic;
 }
 
+/* Cursor animation needs to be top level */
 .cursor {
   color: var(--color-accent);
   animation: blink 1s step-end infinite;
