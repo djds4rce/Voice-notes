@@ -1,0 +1,5 @@
+export const WHISPER_SAMPLING_RATE = 16_000;
+export const MAX_AUDIO_LENGTH = 30; // seconds
+export const MAX_SAMPLES = WHISPER_SAMPLING_RATE * MAX_AUDIO_LENGTH;
+export const WINDOW_SHIFT = 20; // seconds
+export const WINDOW_SHIFT_SAMPLES = WHISPER_SAMPLING_RATE * WINDOW_SHIFT;
